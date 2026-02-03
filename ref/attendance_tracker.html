@@ -1,0 +1,211 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>QR Attendance Tracker - OHMS</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1ca0f2",
+                        "background-light": "#f5f7f8",
+                        "background-dark": "#101b22",
+                        "success": "#17bf63",
+                        "warning": "#ffad1f",
+                        "danger": "#e0245e"
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "1rem",
+                        "lg": "2rem",
+                        "xl": "3rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        body {
+            font-family: 'Inter', sans-serif;
+            min-height: max(884px, 100dvh);
+        }
+        .ios-shadow {
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        }
+        .status-badge-on-time {
+            border-left: 4px solid #17bf63;
+        }
+        .status-badge-late {
+            border-left: 4px solid #ffad1f;
+        }
+        .status-badge-absent {
+            border-left: 4px solid #e0245e;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-background-light dark:bg-background-dark font-display">
+<div class="relative flex h-screen w-full flex-col overflow-x-hidden max-w-[480px] mx-auto bg-background-light dark:bg-background-dark">
+<div class="bg-primary pt-12 pb-20 px-6 rounded-b-[2.5rem]">
+<div class="flex items-center justify-between text-white">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full bg-white/20 flex items-center justify-center overflow-hidden">
+<span class="material-symbols-outlined text-white">person</span>
+</div>
+<div>
+<p class="text-xs opacity-80 font-medium">Eye Department</p>
+<h1 class="text-lg font-bold">QR Attendance Tracker</h1>
+</div>
+</div>
+<button class="size-10 rounded-full bg-white/20 flex items-center justify-center">
+<span class="material-symbols-outlined text-white">notifications</span>
+</button>
+</div>
+</div>
+<div class="px-6 -mt-12">
+<div class="bg-white dark:bg-slate-800 rounded-xl p-5 ios-shadow flex items-center gap-4">
+<div class="size-14 bg-primary/10 rounded-full flex flex-col items-center justify-center text-primary">
+<span class="text-xs font-bold uppercase">Oct</span>
+<span class="text-xl font-bold">24</span>
+</div>
+<div>
+<h2 class="text-[#111518] dark:text-white text-lg font-bold">Monday, October 24</h2>
+<p class="text-[#607a8a] dark:text-slate-400 text-sm">Welcome back, Dr. Sarah</p>
+</div>
+</div>
+</div>
+<div class="p-6">
+<div class="bg-white dark:bg-slate-800 rounded-xl p-6 ios-shadow">
+<div class="flex justify-between items-center mb-6">
+<div>
+<p class="text-[#607a8a] dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Status</p>
+<p class="text-[#111518] dark:text-white text-base font-bold">Ready to Check-in</p>
+</div>
+<div class="text-right">
+<p class="text-[#607a8a] dark:text-slate-400 text-xs font-medium uppercase tracking-wider">Shift</p>
+<p class="text-[#111518] dark:text-white text-base font-bold">09:00 - 17:00</p>
+</div>
+</div>
+<div class="grid grid-cols-2 gap-4 mb-6">
+<div class="bg-background-light dark:bg-slate-700/50 p-3 rounded-xl border border-dashed border-primary/30">
+<p class="text-xs text-[#607a8a] dark:text-slate-400 mb-1">Check-In</p>
+<p class="text-lg font-bold text-primary">--:--</p>
+</div>
+<div class="bg-background-light dark:bg-slate-700/50 p-3 rounded-xl border border-dashed border-primary/30">
+<p class="text-xs text-[#607a8a] dark:text-slate-400 mb-1">Check-Out</p>
+<p class="text-lg font-bold text-primary">--:--</p>
+</div>
+</div>
+<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-4 rounded-full flex items-center justify-center gap-2 transition-colors mb-3">
+<span class="material-symbols-outlined">qr_code_scanner</span>
+                    MARK ATTENDANCE
+                </button>
+<p class="text-[11px] text-[#607a8a] dark:text-slate-400 text-center px-4 leading-relaxed">
+                    Please scan the designated hospital QR code while remaining within the verified geofenced premises to mark your attendance.
+                </p>
+</div>
+</div>
+<div class="px-6">
+<h2 class="text-[#111518] dark:text-white text-lg font-bold mb-4">This Month Summary</h2>
+<div class="grid grid-cols-2 gap-4 mb-8">
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-success/10 border border-success/20">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-success text-sm">check_circle</span>
+<p class="text-[#111518] dark:text-white text-sm font-medium">Present</p>
+</div>
+<p class="text-[#111518] dark:text-white text-2xl font-bold">18</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-danger/10 border border-danger/20">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-danger text-sm">cancel</span>
+<p class="text-[#111518] dark:text-white text-sm font-medium">Absent</p>
+</div>
+<p class="text-[#111518] dark:text-white text-2xl font-bold">01</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-warning/10 border border-warning/20">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-warning text-sm">schedule</span>
+<p class="text-[#111518] dark:text-white text-sm font-medium">Late</p>
+</div>
+<p class="text-[#111518] dark:text-white text-2xl font-bold">02</p>
+</div>
+<div class="flex flex-col gap-1 rounded-xl p-4 bg-primary/10 border border-primary/20">
+<div class="flex items-center gap-2 mb-1">
+<span class="material-symbols-outlined text-primary text-sm">calendar_month</span>
+<p class="text-[#111518] dark:text-white text-sm font-medium">Total</p>
+</div>
+<p class="text-[#111518] dark:text-white text-2xl font-bold">21</p>
+</div>
+</div>
+</div>
+<div class="px-6 pb-24">
+<div class="flex items-center justify-between mb-4">
+<h2 class="text-[#111518] dark:text-white text-lg font-bold">Attendance History</h2>
+<button class="text-primary text-sm font-bold">See All</button>
+</div>
+<div class="space-y-3">
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl ios-shadow status-badge-on-time flex items-center justify-between">
+<div>
+<p class="text-[#111518] dark:text-white font-bold text-sm">Friday, Oct 21</p>
+<p class="text-[#607a8a] dark:text-slate-400 text-xs mt-1">08:55 AM - 05:05 PM</p>
+</div>
+<div class="text-right">
+<span class="bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full uppercase">On Time</span>
+<p class="text-[#111518] dark:text-white text-xs font-medium mt-1">8h 10m</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl ios-shadow status-badge-late flex items-center justify-between">
+<div>
+<p class="text-[#111518] dark:text-white font-bold text-sm">Thursday, Oct 20</p>
+<p class="text-[#607a8a] dark:text-slate-400 text-xs mt-1">09:15 AM - 05:30 PM</p>
+</div>
+<div class="text-right">
+<span class="bg-warning/10 text-warning text-[10px] font-bold px-2 py-1 rounded-full uppercase">Late</span>
+<p class="text-[#111518] dark:text-white text-xs font-medium mt-1">8h 15m</p>
+</div>
+</div>
+<div class="bg-white dark:bg-slate-800 p-4 rounded-xl ios-shadow status-badge-on-time flex items-center justify-between">
+<div>
+<p class="text-[#111518] dark:text-white font-bold text-sm">Wednesday, Oct 19</p>
+<p class="text-[#607a8a] dark:text-slate-400 text-xs mt-1">08:48 AM - 05:02 PM</p>
+</div>
+<div class="text-right">
+<span class="bg-success/10 text-success text-[10px] font-bold px-2 py-1 rounded-full uppercase">On Time</span>
+<p class="text-[#111518] dark:text-white text-xs font-medium mt-1">8h 14m</p>
+</div>
+</div>
+</div>
+</div>
+<div class="fixed bottom-0 w-full max-w-[480px] bg-white dark:bg-slate-900 border-t border-slate-100 dark:border-slate-800 px-6 py-3 flex justify-between items-center ios-shadow">
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">home</span>
+<span class="text-[10px] font-medium">Home</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined">how_to_reg</span>
+<span class="text-[10px] font-medium">Attendance</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">event_note</span>
+<span class="text-[10px] font-medium">Schedule</span>
+</button>
+<button class="flex flex-col items-center gap-1 text-slate-400">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</button>
+</div>
+</div>
+
+</body></html>

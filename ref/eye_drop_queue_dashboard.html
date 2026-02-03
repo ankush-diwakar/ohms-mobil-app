@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Eye Drop Queue Dashboard</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1ca0f2",
+                        "card-border": "#E1E8ED",
+                        "background-light": "#F5F8FA",
+                        "background-dark": "#101b22",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "card": "10px",
+                        "btn": "8px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .status-dot-pulse {
+            animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: .5; }
+        }
+        .no-scrollbar::-webkit-scrollbar {
+            display: none;
+        }
+        .no-scrollbar {
+            -ms-overflow-style: none;
+            scrollbar-width: none;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="font-display bg-background-light dark:bg-background-dark min-h-screen text-[#111518] dark:text-white">
+<div class="h-12 w-full bg-primary"></div>
+<div class="bg-primary px-4 pb-12 pt-4 text-white">
+<div class="flex items-center justify-between mb-6">
+<div class="flex items-center gap-3">
+<div class="size-10 rounded-full border border-white/30 bg-center bg-cover" style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuAHjwuF-Q1jrSGAOKUJSgZ5mrKQ_U4c5uDGu0tMPEwB4KTqVrRpBcafhQokUBDk9VN7HPOMwHktCBiBjbIWL0CQlNu9Rvnk_h7xHdNSbhgPfW6jF1P9wZIhGWVAiBMKd13Xg6jgKmdPTXkgo8ShUOkZX_iLl-iBfn68jcqq4mEg3t7LNf4Q-srmu_KwAEawT_VyBcIDFWZs33sYqzuTCyu4uSfKc-ibgxMED-GLVntZcU1nPouyrPYQdmSJ5dhvWLrv4KpFz_8vRoHb');"></div>
+<div class="flex flex-col">
+<p class="text-[10px] font-bold uppercase tracking-wider opacity-80">Eye Dept Staff</p>
+<h2 class="text-base font-bold leading-tight">Staff Member</h2>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="bg-white/10 p-2 rounded-full">
+<span class="material-symbols-outlined text-white">notifications</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-2 mb-2">
+<h1 class="text-2xl font-bold tracking-tight">Eye Drop Queue</h1>
+<div class="flex items-center gap-1.5 bg-white/10 px-2.5 py-0.5 rounded-md border border-white/10">
+<span class="size-2 bg-red-400 rounded-full status-dot-pulse"></span>
+<span class="text-[10px] font-bold uppercase tracking-wider">Live</span>
+</div>
+</div>
+</div>
+<div class="px-4 -mt-7 mb-6">
+<label class="relative flex w-full shadow-md rounded-lg">
+<div class="absolute inset-y-0 left-0 flex items-center pl-4 pointer-events-none">
+<span class="material-symbols-outlined text-gray-400">search</span>
+</div>
+<input class="block w-full pl-12 pr-4 py-3.5 bg-white dark:bg-[#1c2730] border-none rounded-lg text-sm focus:ring-2 focus:ring-primary placeholder:text-gray-400 shadow-sm" placeholder="Search by patient name or ID..." type="text"/>
+</label>
+</div>
+<div class="px-4 mb-6">
+<div class="flex gap-2 overflow-x-auto no-scrollbar pb-1">
+<button class="px-6 py-2 bg-primary text-white font-bold text-sm rounded-lg shadow-sm">All</button>
+<button class="px-6 py-2 bg-white dark:bg-[#1c2730] text-[#536471] font-bold text-sm rounded-lg border border-card-border dark:border-gray-800">Pending</button>
+<button class="px-6 py-2 bg-white dark:bg-[#1c2730] text-[#536471] font-bold text-sm rounded-lg border border-card-border dark:border-gray-800">Completed</button>
+</div>
+</div>
+<main class="px-4 pb-24 space-y-3">
+<div class="bg-white dark:bg-[#1c2730] rounded-[10px] overflow-hidden shadow-sm border border-card-border dark:border-gray-800 flex">
+<div class="w-1.5 bg-orange-400 shrink-0"></div>
+<div class="p-4 flex-1">
+<div class="mb-4">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-base font-bold text-[#111518] dark:text-white">John Doe <span class="text-[#536471] font-medium ml-1">#8821</span></h3>
+<span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded">Pending</span>
+</div>
+<div class="flex items-center gap-3 text-[#536471] dark:text-gray-400 text-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>09:15 AM</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">meeting_room</span>
+<span>Room 4</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-white font-bold py-2.5 rounded-lg text-sm">
+                    Mark Complete
+                </button>
+<button class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-[#536471] dark:text-gray-300 font-bold rounded-lg text-sm border border-gray-200 dark:border-gray-700">
+                    View
+                </button>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-[#1c2730] rounded-[10px] overflow-hidden shadow-sm border border-card-border dark:border-gray-800 flex">
+<div class="w-1.5 bg-primary shrink-0"></div>
+<div class="p-4 flex-1">
+<div class="mb-4">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-base font-bold text-[#111518] dark:text-white">Jane Smith <span class="text-[#536471] font-medium ml-1">#8845</span></h3>
+<span class="text-[10px] font-bold text-primary uppercase tracking-widest bg-blue-50 dark:bg-primary/10 px-2 py-0.5 rounded">In Progress</span>
+</div>
+<div class="flex items-center gap-3 text-[#536471] dark:text-gray-400 text-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>09:30 AM</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">meeting_room</span>
+<span>Room 2</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-white font-bold py-2.5 rounded-lg text-sm">
+                    Mark Complete
+                </button>
+<button class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-[#536471] dark:text-gray-300 font-bold rounded-lg text-sm border border-gray-200 dark:border-gray-700">
+                    View
+                </button>
+</div>
+</div>
+</div>
+<div class="bg-white dark:bg-[#1c2730] rounded-[10px] overflow-hidden shadow-sm border border-card-border dark:border-gray-800 flex">
+<div class="w-1.5 bg-orange-400 shrink-0"></div>
+<div class="p-4 flex-1">
+<div class="mb-4">
+<div class="flex justify-between items-start mb-1">
+<h3 class="text-base font-bold text-[#111518] dark:text-white">Robert Wilson <span class="text-[#536471] font-medium ml-1">#8901</span></h3>
+<span class="text-[10px] font-bold text-orange-500 uppercase tracking-widest bg-orange-50 dark:bg-orange-900/20 px-2 py-0.5 rounded">Pending</span>
+</div>
+<div class="flex items-center gap-3 text-[#536471] dark:text-gray-400 text-sm">
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">schedule</span>
+<span>09:45 AM</span>
+</div>
+<div class="flex items-center gap-1">
+<span class="material-symbols-outlined text-[16px]">meeting_room</span>
+<span>Room 7</span>
+</div>
+</div>
+</div>
+<div class="flex gap-2">
+<button class="flex-1 bg-primary text-white font-bold py-2.5 rounded-lg text-sm">
+                    Mark Complete
+                </button>
+<button class="px-5 py-2.5 bg-gray-100 dark:bg-gray-800 text-[#536471] dark:text-gray-300 font-bold rounded-lg text-sm border border-gray-200 dark:border-gray-700">
+                    View
+                </button>
+</div>
+</div>
+</div>
+<div class="bg-white/70 dark:bg-[#1c2730]/70 rounded-[10px] overflow-hidden border border-card-border dark:border-gray-800 flex opacity-80">
+<div class="w-1.5 bg-green-500 shrink-0"></div>
+<div class="p-4 flex-1">
+<div class="flex justify-between items-center">
+<div>
+<h3 class="text-base font-bold text-[#111518]/60 dark:text-white/60 line-through">Alice Brown <span class="text-[#536471] font-medium ml-1">#8755</span></h3>
+<div class="flex items-center gap-1.5 text-green-600 dark:text-green-500 text-xs font-medium mt-1">
+<span class="material-symbols-outlined text-[14px] font-bold">check_circle</span>
+<span>Finished at 08:55 AM</span>
+</div>
+</div>
+<button class="text-primary font-bold text-sm bg-blue-50 dark:bg-primary/10 px-4 py-2 rounded-lg">Review</button>
+</div>
+</div>
+</div>
+</main>
+<nav class="fixed bottom-0 w-full bg-white dark:bg-[#1c2730] border-t border-card-border dark:border-gray-800 px-6 py-3 pb-8 flex justify-between items-center z-50">
+<div class="flex flex-col items-center gap-1 text-primary">
+<span class="material-symbols-outlined" style="font-variation-settings: 'FILL' 1;">list_alt</span>
+<span class="text-[10px] font-bold">Queue</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#536471]">
+<span class="material-symbols-outlined">person</span>
+<span class="text-[10px] font-medium">Patients</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#536471]">
+<span class="material-symbols-outlined">calendar_today</span>
+<span class="text-[10px] font-medium">Schedule</span>
+</div>
+<div class="flex flex-col items-center gap-1 text-[#536471]">
+<span class="material-symbols-outlined">settings</span>
+<span class="text-[10px] font-medium">Settings</span>
+</div>
+</nav>
+<div class="h-20 w-full"></div>
+
+</body></html>
