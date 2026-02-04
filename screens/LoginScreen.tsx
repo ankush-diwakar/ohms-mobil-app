@@ -8,25 +8,30 @@ import {
   KeyboardAvoidingView,
   ScrollView,
   Platform,
+  ActivityIndicator,
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import LottieView from 'lottie-react-native';import { LinearGradient } from 'expo-linear-gradient';import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import LottieView from 'lottie-react-native';
+import { LinearGradient } from 'expo-linear-gradient';
+import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
+
+import { useAuth } from '../contexts/AuthContext';
+import { authService } from '../services/authService';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
-interface LoginScreenProps {
-  onLogin: () => void;
-}
-
-export default function LoginScreen({ onLogin }: LoginScreenProps) {
+export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [rememberMe, setRememberMe] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+
+  const { login } = useAuth();
 
   let [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -45,16 +50,46 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
     return null;
   }
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email.trim() || !password.trim()) {
       Alert.alert('Error', 'Please fill in all fields');
       return;
     }
 
-    // Simulate login process
-    Alert.alert('Success', 'Login successful!', [
-      { text: 'OK', onPress: onLogin }
-    ]);
+    setIsLoading(true);
+
+    try {
+      // Call the staff login API
+      const response = await authService.staffLogin({
+        email: email.trim(),
+        password: password.trim(),
+      });
+
+      if (response.data && response.data.user) {
+        const userData = {
+          ...response.data.user,
+          role: 'staff', // Set the role explicitly
+        };
+
+        // Store user data in auth context
+        await login(userData);
+
+        Alert.alert('Success', `Welcome back, ${userData.firstName}!`);
+      } else {
+        throw new Error('Invalid response structure');
+      }
+    } catch (error: any) {
+      console.error('Login error:', error);
+      
+      let errorMessage = 'Login failed. Please try again.';
+      if (error.message) {
+        errorMessage = error.message;
+      }
+
+      Alert.alert('Login Failed', errorMessage);
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const handleForgotPassword = () => {
@@ -209,7 +244,8 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                 {/* Login Button */}
                 <TouchableOpacity
                   onPress={handleLogin}
-                  className="w-full h-12 bg-[#1DA1F2] rounded-lg items-center justify-center mt-8 shadow-lg"
+                  disabled={isLoading}
+                  className={`w-full h-12 ${isLoading ? 'bg-[#1DA1F2]/50' : 'bg-[#1DA1F2]'} rounded-lg items-center justify-center mt-8 shadow-lg`}
                   activeOpacity={0.8}
                   style={{
                     shadowColor: '#1DA1F2',
@@ -219,15 +255,19 @@ export default function LoginScreen({ onLogin }: LoginScreenProps) {
                     elevation: 8,
                   }}
                 >
-                  <Text 
-                    className="text-white text-base"
-                    style={{ 
-                      fontFamily: 'Poppins_600SemiBold',
-                      letterSpacing: 0.5
-                    }}
-                  >
-                    Login to Dashboard
-                  </Text>
+                  {isLoading ? (
+                    <ActivityIndicator color="white" size="small" />
+                  ) : (
+                    <Text 
+                      className="text-white text-base"
+                      style={{ 
+                        fontFamily: 'Poppins_600SemiBold',
+                        letterSpacing: 0.5
+                      }}
+                    >
+                      Login to Dashboard
+                    </Text>
+                  )}
                 </TouchableOpacity>
 
                 {/* Remember Me Checkbox - Centered */}

@@ -1,31 +1,45 @@
-import React, { useState } from 'react';
+import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 
 import LoginScreen from './screens/LoginScreen';
 import TabNavigator from './navigation/TabNavigator';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
 
 import './global.css';
 
-export default function App() {
-  const [isLoggedIn, setIsLoggedIn] = useState(false);
+// Create a client
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      staleTime: 1000 * 60 * 5, // 5 minutes
+      retry: 2,
+    },
+  },
+});
 
-  const handleLogin = () => {
-    setIsLoggedIn(true);
-  };
-
-  const handleLogout = () => {
-    setIsLoggedIn(false);
-  };
+function AppContent() {
+  const { isAuthenticated, logout } = useAuth();
 
   return (
     <NavigationContainer>
       <StatusBar style="auto" />
-      {isLoggedIn ? (
-        <TabNavigator onLogout={handleLogout} />
+      {isAuthenticated() ? (
+        <TabNavigator onLogout={logout} />
       ) : (
-        <LoginScreen onLogin={handleLogin} />
+        <LoginScreen />
       )}
     </NavigationContainer>
+  );
+}
+
+export default function App() {
+  return (
+    <QueryClientProvider client={queryClient}>
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
+    </QueryClientProvider>
   );
 }

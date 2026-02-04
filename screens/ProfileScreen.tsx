@@ -1,10 +1,13 @@
 import React, { useState } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Animated } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+
+import { useAuth } from '../contexts/AuthContext';
+import Avatar from '../components/Avatar';
 
 interface ProfileScreenProps {
   onLogout: () => void;
@@ -12,6 +15,8 @@ interface ProfileScreenProps {
 
 export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
   const [avatarVisible, setAvatarVisible] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const { user, logout, fetchStaffProfile } = useAuth();
   
   let [fontsLoaded] = useFonts({
     Poppins_400Regular,
@@ -30,9 +35,23 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
       'Are you sure you want to logout?',
       [
         { text: 'Cancel', style: 'cancel' },
-        { text: 'Logout', style: 'destructive', onPress: onLogout }
+        { text: 'Logout', style: 'destructive', onPress: async () => {
+          await logout();
+          onLogout();
+        }}
       ]
     );
+  };
+
+  const onRefresh = async () => {
+    setRefreshing(true);
+    try {
+      await fetchStaffProfile();
+    } catch (error) {
+      console.error('Failed to refresh profile:', error);
+    } finally {
+      setRefreshing(false);
+    }
   };
 
   const handleScroll = (event: any) => {
@@ -44,23 +63,33 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
   const personalInfo = [
     {
       title: 'Full Name',
-      value: 'Dr. Alex Johnson',
+      value: user ? `${user.firstName} ${user.lastName}` : 'N/A',
       icon: 'person-outline',
     },
     {
-      title: 'Work Email',
-      value: 'alex.johnson@ohms-hospital.com',
+      title: 'Email',
+      value: user?.email || 'N/A',
       icon: 'mail-outline',
     },
     {
-      title: 'Phone Number',
-      value: '+1 (555) 0123-4567',
+      title: 'Phone',
+      value: user?.phone || 'N/A',
       icon: 'call-outline',
     },
     {
+      title: 'Employee ID',
+      value: user?.employeeId || 'N/A',
+      icon: 'card-outline',
+    },
+    {
+      title: 'Staff Type',
+      value: user?.staffType || 'N/A',
+      icon: 'briefcase-outline',
+    },
+    {
       title: 'Department',
-      value: 'Ophthalmology - Ward A',
-      icon: 'medical-outline',
+      value: user?.department || 'N/A',
+      icon: 'business-outline',
     },
   ];
 
@@ -142,9 +171,12 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
             zIndex: 9999,
           }}
         >
-          <View className="w-28 h-28 bg-gradient-to-br from-[#0ea5e9] to-[#38bdf8] rounded-full items-center justify-center">
-            <Ionicons name="person" size={48} color="#0ea5e9" />
-          </View>
+          <Avatar
+            src={user?.profilePhoto}
+            firstName={user?.firstName}
+            lastName={user?.lastName}
+            size="xl"
+          />
         </View>
       )}
 
@@ -155,6 +187,14 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
         contentContainerStyle={{ paddingTop: 10 }}
         onScroll={handleScroll}
         scrollEventThrottle={16}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor="#0ea5e9"
+            title="Pull to refresh profile"
+          />
+        }
       >
         {/* Profile Info */}
         <View className="px-4">
@@ -184,19 +224,19 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
                 className="text-[#14171A] text-2xl font-bold"
                 style={{ fontFamily: 'Poppins_700Bold' }}
               >
-                Dr. Alex Johnson
+                {user ? `${user.firstName} ${user.lastName}` : 'User Name'}
               </Text>
               <Text 
                 className="text-[#0ea5e9] text-base font-medium mt-1"
                 style={{ fontFamily: 'Poppins_500Medium' }}
               >
-                alex.johnson@ohms-hospital.com
+                {user?.email || 'user@hospital.com'}
               </Text>
               <Text 
                 className="text-[#657786] text-sm mt-1"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                Employee ID: OHMS-88291
+                Employee ID: {user?.employeeId || 'N/A'}
               </Text>
             </View>
           </View>
