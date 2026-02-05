@@ -2,6 +2,7 @@ import React from 'react';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { Ionicons } from '@expo/vector-icons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EyeDropQueueScreen from '../screens/EyeDropQueueScreen';
 import AttendanceScreen from '../screens/AttendanceScreen';
@@ -14,15 +15,19 @@ interface TabNavigatorProps {
 }
 
 export default function TabNavigator({ onLogout }: TabNavigatorProps) {
+  const insets = useSafeAreaInsets();
+  
   return (
     <Tab.Navigator
       screenOptions={({ route }) => ({
         tabBarIcon: ({ focused, color, size }) => {
+          const iconSize = Math.min(size + 2, 26); // Cap icon size to prevent overflow
+          
           if (route.name === 'EyeDropQueue') {
             return (
               <MaterialCommunityIcons 
                 name={focused ? 'eye-check' : 'eye-check-outline'} 
-                size={size + 2} 
+                size={iconSize} 
                 color={color} 
               />
             );
@@ -30,7 +35,7 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
             return (
               <Ionicons 
                 name={focused ? 'calendar' : 'calendar-outline'} 
-                size={size + 2} 
+                size={iconSize} 
                 color={color} 
               />
             );
@@ -38,7 +43,7 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
             return (
               <Ionicons 
                 name={focused ? 'person-circle' : 'person-circle-outline'} 
-                size={size + 2} 
+                size={iconSize} 
                 color={color} 
               />
             );
@@ -46,7 +51,7 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
             return (
               <Ionicons 
                 name="help-outline" 
-                size={size + 2} 
+                size={iconSize} 
                 color={color} 
               />
             );
@@ -57,26 +62,33 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
         tabBarStyle: {
           backgroundColor: '#ffffff',
           borderTopColor: '#E1E8ED',
-          borderTopWidth: 1,
-          paddingTop: 8,
-          paddingBottom: 16,
-          height: 60,
+          borderTopWidth: 0.5,
+          paddingTop: 6,
+          paddingBottom: Math.max(insets.bottom, 8), // Use safe area bottom inset
+          paddingHorizontal: 4,
+          height: 64 + Math.max(insets.bottom - 8, 0), // Adjust height for safe area
           shadowColor: '#000',
           shadowOffset: {
             width: 0,
-            height: -2,
+            height: -4,
           },
-          shadowOpacity: 0.1,
-          shadowRadius: 8,
-          elevation: 8,
+          shadowOpacity: 0.08,
+          shadowRadius: 12,
+          elevation: 10,
         },
         tabBarLabelStyle: {
-          fontSize: 11,
-          fontWeight: '500',
+          fontSize: 10,
+          fontWeight: '600',
           textTransform: 'capitalize',
-          letterSpacing: 0.5,
-          marginTop: 3,
-          marginBottom: 4,
+          letterSpacing: 0.3,
+          marginTop: 2,
+          marginBottom: 2,
+        },
+        tabBarItemStyle: {
+          paddingVertical: 4,
+          paddingHorizontal: 8,
+          borderRadius: 12,
+          marginHorizontal: 2,
         },
         headerShown: false,
       })}

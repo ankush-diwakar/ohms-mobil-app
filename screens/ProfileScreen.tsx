@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -14,6 +15,7 @@ interface ProfileScreenProps {
 }
 
 export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
+  const insets = useSafeAreaInsets();
   const [avatarVisible, setAvatarVisible] = useState(true);
   const [refreshing, setRefreshing] = useState(false);
   const { user, logout, fetchStaffProfile } = useAuth();
@@ -184,7 +186,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
       <ScrollView 
         className="flex-1" 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingTop: 10 }}
+        contentContainerStyle={{ paddingTop: 10, paddingBottom: insets.bottom + 80 }} // Dynamic bottom padding
         onScroll={handleScroll}
         scrollEventThrottle={16}
         refreshControl={

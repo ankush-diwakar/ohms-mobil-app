@@ -17,6 +17,7 @@ import LottieView from 'lottie-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 import * as SplashScreen from 'expo-splash-screen';
+import AsyncStorage from '@react-native-async-storage/async-storage';
 
 import { useAuth } from '../contexts/AuthContext';
 import { authService } from '../services/authService';
@@ -46,6 +47,27 @@ export default function LoginScreen() {
     }
   }, [fontsLoaded]);
 
+  // Load remembered credentials on mount
+  useEffect(() => {
+    loadRememberedCredentials();
+  }, []);
+
+  const loadRememberedCredentials = async () => {
+    try {
+      // For security, we only remember email, not password
+      const rememberedEmail = await AsyncStorage.getItem('rememberedEmail');
+      const wasRemembered = await AsyncStorage.getItem('rememberMe');
+      
+      if (wasRemembered === 'true' && rememberedEmail) {
+        setEmail(rememberedEmail);
+        setRememberMe(true);
+        // Password field stays empty for security
+      }
+    } catch (error) {
+      console.error('Error loading remembered credentials:', error);
+    }
+  };
+
   if (!fontsLoaded) {
     return null;
   }
@@ -59,25 +81,19 @@ export default function LoginScreen() {
     setIsLoading(true);
 
     try {
-      // Call the staff login API
-      const response = await authService.staffLogin({
-        email: email.trim(),
-        password: password.trim(),
-      });
+      // Use the new token-based login from AuthContext
+      await login(email.trim(), password.trim(), rememberMe);
 
-      if (response.data && response.data.user) {
-        const userData = {
-          ...response.data.user,
-          role: 'staff', // Set the role explicitly
-        };
-
-        // Store user data in auth context
-        await login(userData);
-
-        Alert.alert('Success', `Welcome back, ${userData.firstName}!`);
+      // Handle remember me for email (not password for security)
+      if (rememberMe) {
+        await AsyncStorage.setItem('rememberedEmail', email.trim());
+        await AsyncStorage.setItem('rememberMe', 'true');
       } else {
-        throw new Error('Invalid response structure');
+        // Clear any previously saved data
+        await AsyncStorage.multiRemove(['rememberedEmail', 'rememberedPassword', 'rememberMe']);
       }
+
+      Alert.alert('Success', 'Welcome back!');
     } catch (error: any) {
       console.error('Login error:', error);
       

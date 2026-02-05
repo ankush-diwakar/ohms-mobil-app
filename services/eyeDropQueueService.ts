@@ -17,9 +17,11 @@ export interface Timing {
   needsDrops: boolean;
   waitingForDilation: boolean;
   readyToResume: boolean;
+  dropsApplied: boolean;
   dilationRound: number;
   waitingSinceMinutes: number;
   timeRemaining?: number;
+  estimatedResumeTime?: string;
 }
 
 export interface QueuePatient {
@@ -29,6 +31,7 @@ export interface QueuePatient {
   timing: Timing;
   holdReason?: string;
   customWaitMinutes?: number;
+  estimatedResumeTime?: string;
 }
 
 export interface QueueStats {

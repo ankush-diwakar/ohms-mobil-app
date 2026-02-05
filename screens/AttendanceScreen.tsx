@@ -1,12 +1,14 @@
 import React, { useState } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
 
 export default function AttendanceScreen() {
+  const insets = useSafeAreaInsets();
   const [checkInStatus, setCheckInStatus] = useState(false);
   const [checkOutStatus, setCheckOutStatus] = useState(false);
   
@@ -74,7 +76,7 @@ export default function AttendanceScreen() {
       <ScrollView 
         className="flex-1" 
         showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: 30 }}
+        contentContainerStyle={{ paddingBottom: insets.bottom + 80 }} // Dynamic padding based on safe area
       >
         {/* Today's Date Card */}
         <View className="px-4 mt-6">
