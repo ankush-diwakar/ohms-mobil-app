@@ -23,6 +23,22 @@ const queryClient = new QueryClient({
   },
 });
 
+export default function App() {
+  return (
+    <ErrorBoundary>
+      <SafeAreaProvider>
+        <QueryClientProvider client={queryClient}>
+          <NavigationContainer>
+            <AuthProvider>
+              <AppContent />
+            </AuthProvider>
+          </NavigationContainer>
+        </QueryClientProvider>
+      </SafeAreaProvider>
+    </ErrorBoundary>
+  );
+}
+
 function AppContent() {
   const { isAuthenticated, logout, isLoading } = useAuth();
   const [forceSkipLoading, setForceSkipLoading] = useState(false);
@@ -50,27 +66,13 @@ function AppContent() {
   }
 
   return (
-    <NavigationContainer>
+    <>
       <StatusBar style="auto" />
       {isAuthenticated() ? (
         <TabNavigator onLogout={logout} />
       ) : (
         <LoginScreen />
       )}
-    </NavigationContainer>
-  );
-}
-
-export default function App() {
-  return (
-    <ErrorBoundary>
-      <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <AuthProvider>
-            <AppContent />
-          </AuthProvider>
-        </QueryClientProvider>
-      </SafeAreaProvider>
-    </ErrorBoundary>
+    </>
   );
 }

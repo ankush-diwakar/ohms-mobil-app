@@ -196,6 +196,23 @@ export default function EyeDropQueueScreen() {
   });
   const isSocketConnected = useSocketConnectionStatus();
 
+  // Helper function to format reasons display
+  const formatReasons = (reasons: string | undefined): string => {
+    if (!reasons) return 'Eye examination preparation';
+    
+    // Split by comma and trim whitespace
+    const reasonsList = reasons.split(',').map(r => r.trim()).filter(r => r.length > 0);
+    
+    if (reasonsList.length <= 1) {
+      return reasons;
+    }
+    
+    // Show first reason + count of additional
+    const firstReason = reasonsList[0];
+    const additionalCount = reasonsList.length - 1;
+    return `${firstReason} +${additionalCount}`;
+  };
+
   // Initialize notifications
   useEffect(() => {
     setupNotifications();
@@ -399,66 +416,76 @@ export default function EyeDropQueueScreen() {
           
           {/* Dashboard Stats Cards */}
           <View className="flex-row flex-wrap justify-between mb-8">
-            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="bg-blue-100 w-10 h-10 rounded-full items-center justify-center">
-                  <Ionicons name="pause-circle" size={20} color="#0ea5e9" />
-                </View>
-                <Text className="text-3xl font-bold text-[#0ea5e9]">
+            {/* Total Patients Card */}
+            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4 relative overflow-hidden">
+              <View className="absolute -right-6 top-1/2 transform -translate-y-1/2" style={{ opacity: 0.2 }}>
+                <Ionicons name="people" size={100} color="#60a5fa" />
+              </View>
+              <View className="relative z-10">
+                <Text className="text-3xl font-bold text-blue-600 mb-2">
                   {stats.totalOnHold.toString().padStart(2, '0')}
                 </Text>
-              </View>
-              <Text className="text-gray-600 text-sm font-medium">
-                On Hold
-              </Text>
-              <Text className="text-gray-400 text-xs">
-                Total
-              </Text>
-            </View>
-            
-            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="bg-green-100 w-10 h-10 rounded-full items-center justify-center">
-                  <Ionicons name="water" size={18} color="#16a34a" />
-                </View>
-                <Text className="text-3xl font-bold text-green-600">
-                  {stats.needingDrops}
+                <Text className="text-gray-700 text-base font-semibold">
+                  Total
+                </Text>
+                <Text className="text-gray-500 text-sm">
+                  In Queue
                 </Text>
               </View>
-              <Text className="text-gray-600 text-sm font-medium">
-                Need Drops
-              </Text>
-              <Text className="text-gray-400 text-xs">
-                Active
-              </Text>
             </View>
             
-            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="bg-orange-100 w-10 h-10 rounded-full items-center justify-center">
-                  <Ionicons name="time" size={18} color="#ea580c" />
-                </View>
-                <Text className="text-3xl font-bold text-orange-600">
-                  {stats.waitingForDilation}
+            {/* Waiting Patients Card */}
+            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4 relative overflow-hidden">
+              <View className="absolute -right-6 top-1/2 transform -translate-y-1/2" style={{ opacity: 0.2 }}>
+                <Ionicons name="time" size={100} color="#fb923c" />
+              </View>
+              <View className="relative z-10">
+                <Text className="text-3xl font-bold text-orange-600 mb-2">
+                  {stats.waitingForDilation.toString().padStart(2, '0')}
+                </Text>
+                <Text className="text-gray-700 text-base font-semibold">
+                  Waiting
+                </Text>
+                <Text className="text-gray-500 text-sm">
+                  From Doctor
                 </Text>
               </View>
-              <Text className="text-gray-600 text-sm font-medium">
-                Waiting
-              </Text>
             </View>
             
-            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4">
-              <View className="flex-row items-center justify-between mb-2">
-                <View className="bg-green-100 w-10 h-10 rounded-full items-center justify-center">
-                  <Ionicons name="checkmark-circle" size={20} color="#16a34a" />
-                </View>
-                <Text className="text-3xl font-bold text-green-600">
+            {/* Need Drops Card */}
+            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4 relative overflow-hidden">
+              <View className="absolute -right-6 top-1/2 transform -translate-y-1/2" style={{ opacity: 0.2 }}>
+                <Ionicons name="water" size={100} color="#4ade80" />
+              </View>
+              <View className="relative z-10">
+                <Text className="text-3xl font-bold text-green-600 mb-2">
+                  {stats.needingDrops.toString().padStart(2, '0')}
+                </Text>
+                <Text className="text-gray-700 text-base font-semibold">
+                  Need Drops
+                </Text>
+                <Text className="text-gray-500 text-sm">
+                  Eye Drops
+                </Text>
+              </View>
+            </View>
+            
+            {/* Ready Patients Card */}
+            <View className="bg-white p-5 rounded-2xl shadow-lg w-[48%] mb-4 relative overflow-hidden">
+              <View className="absolute -right-6 top-1/2 transform -translate-y-1/2" style={{ opacity: 0.2 }}>
+                <Ionicons name="checkmark-circle" size={100} color="#34d399" />
+              </View>
+              <View className="relative z-10">
+                <Text className="text-3xl font-bold text-emerald-600 mb-2">
                   {stats.readyToResume.toString().padStart(2, '0')}
                 </Text>
+                <Text className="text-gray-700 text-base font-semibold">
+                  Ready
+                </Text>
+                <Text className="text-gray-500 text-sm">
+                  Marked Ready
+                </Text>
               </View>
-              <Text className="text-gray-600 text-sm font-medium">
-                Ready
-              </Text>
             </View>
           </View>
 
@@ -571,9 +598,11 @@ export default function EyeDropQueueScreen() {
                         </View>
                       </View>
                       
-                      <Text className="text-gray-500 text-xs">
-                        {patient.holdReason || 'Eye examination preparation'}
-                      </Text>
+                      <View className="mt-2">
+                        <Text className="text-gray-500 text-xs leading-relaxed" numberOfLines={1} ellipsizeMode="tail">
+                          {formatReasons(patient.holdReason)}
+                        </Text>
+                      </View>
                     </View>
                   </View>
                 </View>

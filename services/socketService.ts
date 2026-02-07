@@ -20,7 +20,7 @@ const fetchPatientDetails = async (patientId: string): Promise<any> => {
 };
 
 // Helper function to send local notification
-const sendPatientNotification = async (patientData: any, action: 'added' | 'removed') => {
+const sendPatientNotification = async (patientData: any, action: 'added' | 'removed' | 'resumed' | 'marked_ready') => {
   try {
     // Check notification permissions
     const { status } = await Notifications.getPermissionsAsync();
@@ -30,6 +30,9 @@ const sendPatientNotification = async (patientData: any, action: 'added' | 'remo
     }
 
     const isAdded = action === 'added';
+    const isRemoved = action === 'removed';
+    const isResumed = action === 'resumed';
+    const isMarkedReady = action === 'marked_ready';
     
     // Extract patient name from data or use fallback
     let patientName = 'Unknown Patient';
@@ -59,13 +62,26 @@ const sendPatientNotification = async (patientData: any, action: 'added' | 'remo
       ? patientData.reasons.join(', ') 
       : 'Eye examination preparation';
 
-    const title = isAdded ? '👁️ New Patient in Queue' : '✅ Patient Ready for Examination';
-    const body = isAdded 
-      ? `${patientName} needs: ${reasons}` 
-      : `${patientName} is ready to resume examination`;
+    let title: string;
+    let body: string;
+
+    if (isAdded) {
+      title = '👁️ New Patient in Queue';
+      body = `${patientName} needs: ${reasons}`;
+    } else if (isMarkedReady || isRemoved) {
+      title = '✅ Patient Ready for Examination';
+      body = `${patientName} is ready to resume examination`;
+    } else if (isResumed) {
+      title = '🔄 Patient Resumed';
+      body = `${patientName} has been resumed from observation and added back to queue`;
+    } else {
+      // Fallback case to satisfy TypeScript
+      title = '🔔 Queue Update';
+      body = `${patientName} - Queue status changed`;
+    }
 
     // Trigger haptic feedback
-    if (isAdded) {
+    if (isAdded || isResumed) {
       Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
     }
 
@@ -245,14 +261,31 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
       const handlePatientOnHold = async (data: any) => {
         console.log('📡 Patient added to eye drop queue - Full data:', JSON.stringify(data, null, 2));
         
-        // Try to fetch patient details if we have a patientId
+        // Use existing patient data from WebSocket event (no need to fetch)
         let enrichedData = { ...data };
-        if (data.patientId) {
+        
+        // If we already have patient name from WebSocket, use it
+        if (data.firstName && data.lastName && !enrichedData.patient) {
+          enrichedData.patient = {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            fullName: data.patientName || `${data.firstName} ${data.lastName}`
+          };
+          console.log('✅ Using patient details from WebSocket event:', enrichedData.patient.fullName);
+        } else if (data.patientName && !enrichedData.patient) {
+          enrichedData.patient = {
+            fullName: data.patientName
+          };
+          console.log('✅ Using patient name from WebSocket event:', data.patientName);
+        }
+        
+        // Only fetch from API if we don't have patient details
+        if (!enrichedData.patient && data.patientId) {
           console.log('🔍 Fetching patient details for ID:', data.patientId);
           const patientDetails = await fetchPatientDetails(data.patientId);
           if (patientDetails) {
             enrichedData.patient = patientDetails;
-            console.log('✅ Patient details fetched:', patientDetails.fullName || patientDetails.firstName + ' ' + patientDetails.lastName);
+            console.log('✅ Patient details fetched from API:', patientDetails.fullName || patientDetails.firstName + ' ' + patientDetails.lastName);
           }
         }
         
@@ -272,9 +305,7 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
       const handlePatientRemoved = async (data: any) => {
         console.log('📡 Patient removed from eye drop queue:', data);
         
-        // Send notification for patient removal
-        await sendPatientNotification(data, 'removed');
-        
+        // No notification for eye drops applied - just update the queue
         queryClient.invalidateQueries({ queryKey: ['eyeDropQueue'] });
         
         // Trigger immediate UI update
@@ -296,15 +327,97 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
         }
       };
 
+      // Listen for patient resumed from under observation
+      const handlePatientResumed = async (data: any) => {
+        console.log('📡 Patient resumed from under observation:', data);
+        
+        // Use existing patient data from WebSocket event (no need to fetch)
+        let enrichedData = { ...data };
+        
+        // If we already have patient name from WebSocket, use it
+        if (data.firstName && data.lastName && !enrichedData.patient) {
+          enrichedData.patient = {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            fullName: data.patientName || `${data.firstName} ${data.lastName}`
+          };
+          console.log('✅ Using patient details from WebSocket event:', enrichedData.patient.fullName);
+        } else if (data.patientName && !enrichedData.patient) {
+          enrichedData.patient = {
+            fullName: data.patientName
+          };
+          console.log('✅ Using patient name from WebSocket event:', data.patientName);
+        }
+        
+        // Only fetch from API if we don't have patient details
+        if (!enrichedData.patient && data.patientId) {
+          console.log('🔍 Fetching patient details for resumed patient ID:', data.patientId);
+          const patientDetails = await fetchPatientDetails(data.patientId);
+          if (patientDetails) {
+            enrichedData.patient = patientDetails;
+            console.log('✅ Patient details fetched from API:', patientDetails.fullName || patientDetails.firstName + ' ' + patientDetails.lastName);
+          }
+        }
+        
+        // Send notification for patient resumption
+        await sendPatientNotification(enrichedData, 'resumed');
+        
+        queryClient.invalidateQueries({ queryKey: ['eyeDropQueue'] });
+        
+        // Trigger immediate UI update
+        if (onDataUpdate) {
+          console.log('🔄 Triggering UI update for patient resumption');
+          onDataUpdate();
+        }
+      };
+
+      // Listen for patient marked ready by receptionist2
+      const handlePatientReady = async (data: any) => {
+        console.log('📡 Patient marked ready by receptionist2:', data);
+        
+        // Use existing patient data from WebSocket event (no need to fetch)
+        let enrichedData = { ...data };
+        
+        // If we already have patient name from WebSocket, use it
+        if (data.firstName && data.lastName && !enrichedData.patient) {
+          enrichedData.patient = {
+            firstName: data.firstName,
+            lastName: data.lastName,
+            fullName: data.patientName || `${data.firstName} ${data.lastName}`
+          };
+          console.log('✅ Using patient details from WebSocket event:', enrichedData.patient.fullName);
+        } else if (data.patientName && !enrichedData.patient) {
+          enrichedData.patient = {
+            fullName: data.patientName
+          };
+          console.log('✅ Using patient name from WebSocket event:', data.patientName);
+        }
+        
+        // Send notification for patient marked ready 
+        await sendPatientNotification(enrichedData, 'marked_ready');
+        
+        queryClient.invalidateQueries({ queryKey: ['eyeDropQueue'] });
+        
+        // Trigger immediate UI update
+        if (onDataUpdate) {
+          console.log('🔄 Triggering UI update for patient marked ready');
+          onDataUpdate();
+        }
+      };
+
       // Set up event listeners
       socket.on('queue:patient-on-hold', handlePatientOnHold);
       socket.on('queue:patient-removed', handlePatientRemoved);
+      socket.on('queue:patient-resumed', handlePatientResumed);
+      socket.on('queue:patient-ready', handlePatientReady);
       socket.on('queue:updated', handleQueueUpdate);
 
       // Cleanup on unmount
       return () => {
         socket.off('queue:patient-on-hold', handlePatientOnHold);
         socket.off('queue:patient-removed', handlePatientRemoved);
+        socket.off('queue:patient-resumed', handlePatientResumed);
+        socket.off('queue:patient-ready', handlePatientReady);
         socket.off('queue:updated', handleQueueUpdate);
         socket.off('connect');
         socket.off('reconnect');
