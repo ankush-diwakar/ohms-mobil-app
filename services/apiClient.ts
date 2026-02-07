@@ -14,6 +14,38 @@ interface ApiResponse<T = any> {
   error?: string;
 }
 
+interface LocationAttendanceRequest {
+  otp: string;
+  latitude: number;
+  longitude: number;
+}
+
+interface LocationAttendanceResponse {
+  id: string;
+  checkInTime: string;
+  status: string;
+  attendanceMethod: string;
+  location: {
+    latitude: number;
+    longitude: number;
+    distance: number;
+    withinGeofence: boolean;
+  };
+  staff: {
+    firstName: string;
+    lastName: string;
+    staffType: string;
+    department?: string;
+  };
+  geofenceInfo: {
+    allowedRadius: number;
+    hospitalLocation: {
+      latitude: number;
+      longitude: number;
+    };
+  };
+}
+
 class ApiClient {
   private baseURL: string;
   private static instance: ApiClient;
@@ -196,8 +228,26 @@ class ApiClient {
       body: data ? JSON.stringify(data) : undefined,
     });
   }
+
+  // Location-based attendance marking
+  async markLocationAttendance(
+    otp: string,
+    latitude: number,
+    longitude: number
+  ): Promise<ApiResponse<LocationAttendanceResponse>> {
+    const data: LocationAttendanceRequest = {
+      otp,
+      latitude,
+      longitude
+    };
+
+    return this.post<LocationAttendanceResponse>('/attendance/mark-location', data);
+  }
 }
 
 // Export singleton instance
 export const apiClient = ApiClient.getInstance();
 export default apiClient;
+
+// Export types
+export type { LocationAttendanceResponse, LocationAttendanceRequest, ApiResponse };
