@@ -1,4 +1,4 @@
-import React, { useState, useRef } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -7,14 +7,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { LinearGradient } from 'expo-linear-gradient';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import { useFonts, Poppins_400Regular, Poppins_500Medium, Poppins_600SemiBold, Poppins_700Bold } from '@expo-google-fonts/poppins';
+import LottieView from 'lottie-react-native';
 
 import locationAttendanceService, { type AttendanceError } from '../services/locationAttendanceService';
 import type { LocationAttendanceResponse } from '../services/apiClient';
+import { apiClient } from '../services/apiClient';
 
 export default function AttendanceScreen() {
   const insets = useSafeAreaInsets();
   const [attendanceData, setAttendanceData] = useState<LocationAttendanceResponse | null>(null);
   const [loading, setLoading] = useState(false);
+  const [checkingStatus, setCheckingStatus] = useState(true);
   
   // QR Scanner state
   const [showQRScanner, setShowQRScanner] = useState(false);
@@ -32,8 +35,70 @@ export default function AttendanceScreen() {
     Poppins_700Bold,
   });
 
+  // Check today's attendance status on component mount
+  useEffect(() => {
+    checkTodayAttendanceStatus();
+  }, []);
+
+  const checkTodayAttendanceStatus = async () => {
+    try {
+      setCheckingStatus(true);
+      const response = await apiClient.getTodayAttendanceStatus();
+      
+      if (response.success && response.data) {
+        // If response.data exists, attendance is marked
+        const attendanceInfo = response.data as any; // Type assertion since API response structure might be different
+        
+        if (attendanceInfo.hasAttendance) {
+          // Transform API response to match LocationAttendanceResponse format
+          const transformedData: LocationAttendanceResponse = {
+            id: attendanceInfo.id,
+            checkInTime: attendanceInfo.checkInTime,
+            status: attendanceInfo.status,
+            attendanceMethod: attendanceInfo.attendanceMethod || 'location_based',
+            location: attendanceInfo.location || {
+              latitude: 0,
+              longitude: 0,
+              distance: 0,
+              withinGeofence: true
+            },
+            staff: attendanceInfo.staff,
+            geofenceInfo: {
+              allowedRadius: 100,
+              hospitalLocation: {
+                latitude: 19.120570736906668,
+                longitude: 72.89275097480169
+              }
+            }
+          };
+          
+          setAttendanceData(transformedData);
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error checking today\'s attendance status:', error);
+    } finally {
+      setCheckingStatus(false);
+    }
+  };
+
   if (!fontsLoaded) {
     return null;
+  }
+
+  // Show loading while checking attendance status
+  if (checkingStatus) {
+    return (
+      <View className="flex-1 bg-[#F8FAFC] justify-center items-center">
+        <ActivityIndicator size="large" color="#0ea5e9" />
+        <Text 
+          className="text-[#657786] text-sm mt-4"
+          style={{ fontFamily: 'Poppins_400Regular' }}
+        >
+          Checking today's attendance status...
+        </Text>
+      </View>
+    );
   }
 
   const handleQRScan = async () => {
@@ -323,49 +388,173 @@ export default function AttendanceScreen() {
           </View>
         </View>
 
-        {/* Attendance Details (shown after successful check-in) */}
+        {/* Attendance Success (shown after successful check-in) */}
         {attendanceData && (
           <View className="px-4 mt-6">
-            <Text 
-              className="text-[#14171A] text-lg font-bold mb-4"
-              style={{ fontFamily: 'Poppins_700Bold' }}
-            >
-              Attendance Details
-            </Text>
-            
-            <View className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
-              <View className="mb-4">
-                <Text className="text-gray-500 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Check-in Time
-                </Text>
-                <Text className="text-gray-900 text-lg font-semibold" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {new Date(attendanceData.checkInTime).toLocaleTimeString()} 
-                </Text>
-              </View>
+            {/* Success Animation */}
+            <View className="items-center mb-6">
+              <LottieView
+                source={require('../animations/done.json')}
+                autoPlay
+                loop={false}
+                style={{ width: 120, height: 120 }}
+              />
+            </View>
 
-              <View className="mb-4">
-                <Text className="text-gray-500 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Location Accuracy
+            {/* Success Status Card */}
+            <View className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 mb-6">
+              <LinearGradient
+                colors={['#10b981', '#059669']}
+                start={{ x: 0, y: 0 }}
+                end={{ x: 1, y: 1 }}
+                className="rounded-2xl p-6 -m-6"
+              >
+                <View className="flex-row items-center justify-center mb-2">
+                  <Ionicons name="checkmark-circle" size={28} color="white" />
+                  <Text 
+                    className="text-white text-xl font-bold ml-3"
+                    style={{ fontFamily: 'Poppins_700Bold' }}
+                  >
+                    Checked In Successfully
+                  </Text>
+                </View>
+                <Text 
+                  className="text-green-100 text-center text-sm"
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                >
+                  MARKED AT {new Date(attendanceData.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
                 </Text>
-                <Text className="text-green-600 text-lg font-semibold" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  {attendanceData.location.distance}m from hospital center
-                </Text>
-              </View>
+              </LinearGradient>
+            </View>
 
-              <View className="mb-4">
-                <Text className="text-gray-500 text-sm mb-1" style={{ fontFamily: 'Poppins_400Regular' }}>
-                  Attendance Method
-                </Text>
-                <Text className="text-blue-600 text-lg font-semibold" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                  Location-based verification
-                </Text>
-              </View>
+            {/* Today's Date Section */}
+            <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
+              <Text 
+                className="text-[#0ea5e9] text-sm font-semibold text-center mb-2 tracking-wide"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                TODAY'S DATE
+              </Text>
+              <Text 
+                className="text-[#14171A] text-3xl font-bold text-center"
+                style={{ fontFamily: 'Poppins_700Bold' }}
+              >
+                {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+              </Text>
+              <Text 
+                className="text-[#14171A] text-lg font-semibold text-center mt-1"
+                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              >
+                {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+              </Text>
+            </View>
 
-              <View className="bg-green-50 rounded-lg p-4 border border-green-200">
+            {/* Attendance Details */}
+            <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+              <View className="bg-gray-50 px-6 py-4 border-b border-gray-100">
                 <View className="flex-row items-center">
-                  <Ionicons name="checkmark-circle" size={24} color="#16a34a" />
-                  <Text className="text-green-700 font-semibold ml-3" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Successfully verified at hospital premises
+                  <Ionicons name="information-circle" size={20} color="#6b7280" />
+                  <Text 
+                    className="text-[#14171A] text-lg font-bold ml-2"
+                    style={{ fontFamily: 'Poppins_700Bold' }}
+                  >
+                    Attendance Details
+                  </Text>
+                </View>
+              </View>
+
+              <View className="p-6 space-y-5">
+                {/* Check-in Time */}
+                <View className="flex-row items-center">
+                  <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center">
+                    <Ionicons name="time" size={24} color="#3b82f6" />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text 
+                      className="text-gray-500 text-sm font-medium mb-1"
+                      style={{ fontFamily: 'Poppins_500Medium' }}
+                    >
+                      CHECK-IN TIME
+                    </Text>
+                    <Text 
+                      className="text-[#14171A] text-lg font-bold"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                    >
+                      {new Date(attendanceData.checkInTime).toLocaleTimeString('en-US', { 
+                        hour: '2-digit', 
+                        minute: '2-digit',
+                        second: '2-digit',
+                        hour12: true 
+                      })}
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Location Accuracy */}
+                <View className="flex-row items-center">
+                  <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center">
+                    <Ionicons name="location" size={24} color="#10b981" />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text 
+                      className="text-gray-500 text-sm font-medium mb-1"
+                      style={{ fontFamily: 'Poppins_500Medium' }}
+                    >
+                      LOCATION ACCURACY
+                    </Text>
+                    <Text 
+                      className="text-[#14171A] text-lg font-bold"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                    >
+                      {attendanceData.location.distance}m{' '}
+                      <Text className="text-gray-500 font-normal text-base">from center</Text>
+                    </Text>
+                  </View>
+                </View>
+
+                {/* Verification Method */}
+                <View className="flex-row items-center">
+                  <View className="w-12 h-12 bg-purple-100 rounded-xl items-center justify-center">
+                    <Ionicons name="shield-checkmark" size={24} color="#8b5cf6" />
+                  </View>
+                  <View className="ml-4 flex-1">
+                    <Text 
+                      className="text-gray-500 text-sm font-medium mb-1"
+                      style={{ fontFamily: 'Poppins_500Medium' }}
+                    >
+                      VERIFICATION METHOD
+                    </Text>
+                    <Text 
+                      className="text-[#14171A] text-lg font-bold"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                    >
+                      Location-based
+                    </Text>
+                  </View>
+                </View>
+              </View>
+            </View>
+
+            {/* Location Requirements */}
+            <View className="bg-slate-800 rounded-2xl p-6">
+              <View className="flex-row items-start">
+                <View className="w-12 h-12 bg-blue-500 rounded-xl items-center justify-center">
+                  <Ionicons name="business" size={24} color="white" />
+                </View>
+                <View className="ml-4 flex-1">
+                  <Text 
+                    className="text-white text-lg font-bold mb-2"
+                    style={{ fontFamily: 'Poppins_700Bold' }}
+                  >
+                    Hospital OHMS
+                  </Text>
+                  <Text 
+                    className="text-gray-300 text-sm leading-5"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
+                    You must be within{' '}
+                    <Text className="text-blue-400 font-semibold">100 meters</Text>
+                    {' '}of the hospital to mark attendance. The app verifies your location automatically.
                   </Text>
                 </View>
               </View>

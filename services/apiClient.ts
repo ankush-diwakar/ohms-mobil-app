@@ -243,6 +243,11 @@ class ApiClient {
 
     return this.post<LocationAttendanceResponse>('/attendance/mark-location', data);
   }
+
+  // Check today's attendance status
+  async getTodayAttendanceStatus(): Promise<ApiResponse<LocationAttendanceResponse | null>> {
+    return this.get<LocationAttendanceResponse | null>('/attendance/today-status');
+  }
 }
 
 // Export singleton instance

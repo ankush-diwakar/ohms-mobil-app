@@ -148,13 +148,26 @@ class LocationAttendanceService {
       
       const errorMessage = error instanceof Error ? error.message : String(error);
       
-      // Map API errors to user-friendly error codes
-      if (errorMessage.includes('OTP is invalid or expired')) {
+      // Check for backend API error response format
+      if (error && typeof error === 'object' && 'response' in error) {
+        const apiError = (error as any).response;
+        if (apiError && apiError.error) {
+          switch (apiError.error) {
+            case 'INVALID_OTP':
+              throw { code: 'INVALID_OTP', message: apiError.message || 'The OTP is invalid or has expired. Please get a new QR code.' } as AttendanceError;
+            case 'OUTSIDE_GEOFENCE':
+              throw { code: 'OUTSIDE_GEOFENCE', message: apiError.message || 'You are not within the hospital premises. Please move closer to the hospital.' } as AttendanceError;
+          }
+        }
+      }
+      
+      // Map API errors to user-friendly error codes based on message content
+      if (errorMessage.includes('OTP verification failed') || errorMessage.includes('OTP is invalid or expired')) {
         throw { code: 'INVALID_OTP', message: 'The OTP is invalid or has expired. Please get a new QR code.' } as AttendanceError;
       } else if (errorMessage.includes('already marked')) {
         throw { code: 'ALREADY_MARKED', message: 'Attendance has already been marked for today.' } as AttendanceError;
-      } else if (errorMessage.includes('not in the hospital premises')) {
-        throw { code: 'OUTSIDE_GEOFENCE', message: 'You are not within the hospital premises. Please move closer to the hospital.' } as AttendanceError;
+      } else if (errorMessage.includes('not within hospital premises') || errorMessage.includes('not in the hospital premises')) {
+        throw { code: 'OUTSIDE_GEOFENCE', message: errorMessage || 'You are not within the hospital premises. Please move closer to the hospital.' } as AttendanceError;
       } else if (errorMessage.includes('Network') || errorMessage.includes('fetch')) {
         throw { code: 'NETWORK_ERROR', message: 'Network error. Please check your internet connection.' } as AttendanceError;
       } else {
