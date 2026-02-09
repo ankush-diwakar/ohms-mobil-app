@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, AlertButton } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -167,7 +167,7 @@ export default function AttendanceScreen() {
       Alert.alert(
         'Attendance Marked Successfully! ✅',
         `Your attendance has been marked at ${new Date(result.checkInTime).toLocaleTimeString()}.\n\nLocation: ${result.location.distance}m from hospital center`,
-        [{ text: 'Great!', style: 'default' }]
+        [{ text: 'Great!' }]
       );
       
     } catch (error) {
@@ -175,13 +175,13 @@ export default function AttendanceScreen() {
       
       let alertTitle = 'Attendance Failed';
       let alertMessage = attendanceError.message;
-      let alertButtons = [{ text: 'OK' }];
+      let alertButtons: AlertButton[] = [{ text: 'OK' }];
       
       switch (attendanceError.code) {
         case 'PERMISSION_DENIED':
           alertTitle = 'Location Permission Required';
           alertButtons = [
-            { text: 'Cancel', style: 'cancel' },
+            { text: 'Cancel' },
             { text: 'Open Settings', onPress: () => {/* Could open device settings */} }
           ];
           break;
@@ -258,9 +258,10 @@ export default function AttendanceScreen() {
         showsVerticalScrollIndicator={false}
         contentContainerStyle={{ paddingBottom: insets.bottom + 80 }}
       >
-        {/* Today's Date Card */}
-        <View className="px-4 mt-6">
-          <View className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
+        {/* Today's Date Card - Only show when not checked in */}
+        {!attendanceData && (
+          <View className="px-4 mt-6">
+            <View className="bg-white rounded-xl p-6 shadow-lg border border-gray-100">
             <View className="items-center mb-6">
               <Text 
                 className="text-[#0ea5e9] text-lg font-semibold mb-2"
@@ -300,8 +301,8 @@ export default function AttendanceScreen() {
                 className="text-[#657786] text-sm text-center"
                 style={{ fontFamily: 'Poppins_400Regular' }}
               >
-                {attendanceData 
-                  ? `Marked at ${new Date(attendanceData.checkInTime).toLocaleTimeString()}`
+                {attendanceData
+                  ? `Marked at ${new Date((attendanceData as any).checkInTime).toLocaleTimeString()}`
                   : 'Scan QR code from admin dashboard or enter OTP'
                 }
               </Text>
@@ -385,73 +386,73 @@ export default function AttendanceScreen() {
                 </Text>
               </View>
             )}
+            </View>
           </View>
-        </View>
+        )}
 
         {/* Attendance Success (shown after successful check-in) */}
         {attendanceData && (
           <View className="px-4 mt-6">
-            {/* Success Animation */}
-            <View className="items-center mb-6">
-              <LottieView
-                source={require('../animations/done.json')}
-                autoPlay
-                loop={false}
-                style={{ width: 120, height: 120 }}
-              />
-            </View>
-
-            {/* Success Status Card */}
-            <View className="bg-gradient-to-r from-green-500 to-emerald-500 rounded-2xl p-6 mb-6">
-              <LinearGradient
-                colors={['#10b981', '#059669']}
-                start={{ x: 0, y: 0 }}
-                end={{ x: 1, y: 1 }}
-                className="rounded-2xl p-6 -m-6"
-              >
-                <View className="flex-row items-center justify-center mb-2">
+            {/* Combined Success Card with Green Message, Animation and Date */}
+            <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
+              {/* Success Status at Top */}
+              <View className="px-6 py-6" style={{ backgroundColor: '#10b981' }}>
+                <View className="items-center mb-2">
                   <Ionicons name="checkmark-circle" size={28} color="white" />
                   <Text 
-                    className="text-white text-xl font-bold ml-3"
+                    className="text-white text-xl font-bold mt-2 text-center"
                     style={{ fontFamily: 'Poppins_700Bold' }}
                   >
-                    Checked In Successfully
+                    Attendance Marked
                   </Text>
                 </View>
                 <Text 
-                  className="text-green-100 text-center text-sm"
+                  className="text-white text-center text-sm opacity-90"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  MARKED AT {new Date(attendanceData.checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}
+                  MARKED AT {attendanceData ? new Date((attendanceData as any).checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
                 </Text>
-              </LinearGradient>
-            </View>
+              </View>
 
-            {/* Today's Date Section */}
-            <View className="bg-white rounded-2xl p-6 mb-6 shadow-sm border border-gray-100">
-              <Text 
-                className="text-[#0ea5e9] text-sm font-semibold text-center mb-2 tracking-wide"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
+              {/* Success Animation */}
+              <View 
+                className="items-center py-6"
+                style={{ backgroundColor: '#FDFDFD' }}
               >
-                TODAY'S DATE
-              </Text>
-              <Text 
-                className="text-[#14171A] text-3xl font-bold text-center"
-                style={{ fontFamily: 'Poppins_700Bold' }}
-              >
-                {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
-              </Text>
-              <Text 
-                className="text-[#14171A] text-lg font-semibold text-center mt-1"
-                style={{ fontFamily: 'Poppins_600SemiBold' }}
-              >
-                {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
-              </Text>
+                <LottieView
+                  source={require('../animations/done.json')}
+                  autoPlay
+                  loop={false}
+                  style={{ width: 120, height: 120 }}
+                />
+              </View>
+
+              {/* Today's Date Section */}
+              <View className="px-6 pb-6 border-t border-gray-100">
+                <Text 
+                  className="text-[#0ea5e9] text-sm font-semibold text-center mb-3 tracking-wide mt-4"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  TODAY'S DATE
+                </Text>
+                <Text 
+                  className="text-[#14171A] text-3xl font-bold text-center"
+                  style={{ fontFamily: 'Poppins_700Bold' }}
+                >
+                  {new Date().toLocaleDateString('en-US', { weekday: 'long' })}
+                </Text>
+                <Text 
+                  className="text-[#14171A] text-lg font-semibold text-center mt-1"
+                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                >
+                  {new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}
+                </Text>
+              </View>
             </View>
 
             {/* Attendance Details */}
-            <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
-              <View className="bg-gray-50 px-6 py-4 border-b border-gray-100">
+            <View className="rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6" style={{ backgroundColor: '#FDFDFD' }}>
+              <View className="px-6 py-4 border-b border-gray-100" style={{ backgroundColor: '#f1f5f9' }}>
                 <View className="flex-row items-center">
                   <Ionicons name="information-circle" size={20} color="#6b7280" />
                   <Text 
@@ -463,9 +464,9 @@ export default function AttendanceScreen() {
                 </View>
               </View>
 
-              <View className="p-6 space-y-5">
+              <View className="p-6">
                 {/* Check-in Time */}
-                <View className="flex-row items-center">
+                <View className="flex-row items-center mb-6">
                   <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center">
                     <Ionicons name="time" size={24} color="#3b82f6" />
                   </View>
@@ -480,18 +481,18 @@ export default function AttendanceScreen() {
                       className="text-[#14171A] text-lg font-bold"
                       style={{ fontFamily: 'Poppins_700Bold' }}
                     >
-                      {new Date(attendanceData.checkInTime).toLocaleTimeString('en-US', { 
+                      {attendanceData ? new Date((attendanceData as any).checkInTime).toLocaleTimeString('en-US', { 
                         hour: '2-digit', 
                         minute: '2-digit',
                         second: '2-digit',
                         hour12: true 
-                      })}
+                      }) : ''}
                     </Text>
                   </View>
                 </View>
 
                 {/* Location Accuracy */}
-                <View className="flex-row items-center">
+                <View className="flex-row items-center mb-6">
                   <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center">
                     <Ionicons name="location" size={24} color="#10b981" />
                   </View>
@@ -534,64 +535,36 @@ export default function AttendanceScreen() {
                 </View>
               </View>
             </View>
-
-            {/* Location Requirements */}
-            <View className="bg-slate-800 rounded-2xl p-6">
-              <View className="flex-row items-start">
-                <View className="w-12 h-12 bg-blue-500 rounded-xl items-center justify-center">
-                  <Ionicons name="business" size={24} color="white" />
-                </View>
-                <View className="ml-4 flex-1">
-                  <Text 
-                    className="text-white text-lg font-bold mb-2"
-                    style={{ fontFamily: 'Poppins_700Bold' }}
-                  >
-                    Hospital OHMS
-                  </Text>
-                  <Text 
-                    className="text-gray-300 text-sm leading-5"
-                    style={{ fontFamily: 'Poppins_400Regular' }}
-                  >
-                    You must be within{' '}
-                    <Text className="text-blue-400 font-semibold">100 meters</Text>
-                    {' '}of the hospital to mark attendance. The app verifies your location automatically.
-                  </Text>
-                </View>
-              </View>
-            </View>
           </View>
         )}
 
-        {/* Hospital Info */}
-        <View className="px-4 mt-6 mb-6">
-          <Text 
-            className="text-[#14171A] text-lg font-bold mb-4"
-            style={{ fontFamily: 'Poppins_700Bold' }}
-          >
-            Location Requirements
-          </Text>
-          
-          <View className="bg-white rounded-xl shadow-sm border border-gray-100 p-6">
+        {/* Hospital OHMS Info - Always Visible */}
+        <View className="px-4 mt-6">
+          <View className="bg-slate-800 rounded-2xl p-6">
             <View className="flex-row items-start">
-              <Ionicons name="location" size={24} color="#0ea5e9" className="mt-1" />
+              <View className="w-12 h-12 bg-blue-500 rounded-xl items-center justify-center">
+                <Ionicons name="business" size={24} color="white" />
+              </View>
               <View className="ml-4 flex-1">
                 <Text 
-                  className="text-[#14171A] text-base font-semibold mb-2"
-                  style={{ fontFamily: 'Poppins_600SemiBold' }}
+                  className="text-white text-lg font-bold mb-2"
+                  style={{ fontFamily: 'Poppins_700Bold' }}
                 >
                   Hospital OHMS
                 </Text>
                 <Text 
-                  className="text-[#657786] text-sm leading-5"
+                  className="text-gray-300 text-sm leading-5"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  You must be within 100 meters of the hospital to mark attendance. 
-                  The app will automatically verify your location when you scan the QR code or enter the OTP.
+                  You must be within{' '}
+                  <Text className="text-blue-400 font-semibold">100 meters</Text>
+                  {' '}of the hospital to mark attendance. The app verifies your location automatically.
                 </Text>
               </View>
             </View>
           </View>
         </View>
+
       </ScrollView>
 
       {/* QR Scanner Modal */}
@@ -641,7 +614,7 @@ export default function AttendanceScreen() {
                   className="text-white text-center mt-6 px-8"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  Point your camera at the attendance QR code from the admin dashboard
+                  Point your camera at the attendance QR code 
                 </Text>
               </View>
             </CameraView>
@@ -684,7 +657,7 @@ export default function AttendanceScreen() {
               className="text-gray-600 text-center mb-6"
               style={{ fontFamily: 'Poppins_400Regular' }}
             >
-              Enter the 6-digit OTP from the admin dashboard
+              Enter the 6-digit OTP 
             </Text>
 
             <TextInput
