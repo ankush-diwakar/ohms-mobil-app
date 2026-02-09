@@ -5,8 +5,10 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import EyeDropQueueScreen from '../screens/EyeDropQueueScreen';
+import PatientsQueue from '../components/PatientsQueue';
 import AttendanceScreen from '../screens/AttendanceScreen';
 import ProfileScreen from '../screens/ProfileScreen';
+import { useAuth } from '../contexts/AuthContext';
 
 const Tab = createBottomTabNavigator();
 
@@ -16,6 +18,11 @@ interface TabNavigatorProps {
 
 export default function TabNavigator({ onLogout }: TabNavigatorProps) {
   const insets = useSafeAreaInsets();
+  const { user } = useAuth();
+  
+  // Determine which queue component to show based on staff type
+  const isReceptionist2 = user?.staffType === 'receptionist2';
+  const QueueComponent = isReceptionist2 ? EyeDropQueueScreen : PatientsQueue;
   
   return (
     <Tab.Navigator
@@ -23,10 +30,10 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
         tabBarIcon: ({ focused, color, size }) => {
           const iconSize = Math.min(size + 2, 26); // Cap icon size to prevent overflow
           
-          if (route.name === 'EyeDropQueue') {
+          if (route.name === 'Queue') {
             return (
               <MaterialCommunityIcons 
-                name={focused ? 'eye-check' : 'eye-check-outline'} 
+                name={focused ? 'account-group' : 'account-group-outline'} 
                 size={iconSize} 
                 color={color} 
               />
@@ -94,10 +101,10 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
       })}
     >
       <Tab.Screen 
-        name="EyeDropQueue" 
-        component={EyeDropQueueScreen}
+        name="Queue" 
+        component={QueueComponent}
         options={{
-          tabBarLabel: 'Queue',
+          tabBarLabel: isReceptionist2 ? 'Eye Drops' : 'Queue',
         }}
       />
       <Tab.Screen 

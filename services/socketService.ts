@@ -245,7 +245,7 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
       
       // Rejoin rooms on reconnection
       socket.on('reconnect', () => {
-        console.log('🔄 WebSocket reconnected, rejoining rooms...');
+
         setTimeout(() => {
           joinEyeDropRoom();
           // Refresh eye drop queue data
@@ -259,8 +259,6 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
 
       // Listen for new patient added to eye drop queue
       const handlePatientOnHold = async (data: any) => {
-        console.log('📡 Patient added to eye drop queue - Full data:', JSON.stringify(data, null, 2));
-        
         // Use existing patient data from WebSocket event (no need to fetch)
         let enrichedData = { ...data };
         
@@ -271,21 +269,17 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
             lastName: data.lastName,
             fullName: data.patientName || `${data.firstName} ${data.lastName}`
           };
-          console.log('✅ Using patient details from WebSocket event:', enrichedData.patient.fullName);
         } else if (data.patientName && !enrichedData.patient) {
           enrichedData.patient = {
             fullName: data.patientName
           };
-          console.log('✅ Using patient name from WebSocket event:', data.patientName);
         }
         
         // Only fetch from API if we don't have patient details
         if (!enrichedData.patient && data.patientId) {
-          console.log('🔍 Fetching patient details for ID:', data.patientId);
           const patientDetails = await fetchPatientDetails(data.patientId);
           if (patientDetails) {
             enrichedData.patient = patientDetails;
-            console.log('✅ Patient details fetched from API:', patientDetails.fullName || patientDetails.firstName + ' ' + patientDetails.lastName);
           }
         }
         
@@ -296,28 +290,23 @@ export const useEyeDropQueueSocket = (onDataUpdate?: () => void) => {
         
         // Trigger immediate UI update
         if (onDataUpdate) {
-          console.log('🔄 Triggering UI update for new patient');
           onDataUpdate();
         }
       };
 
       // Listen for patient removed from eye drop queue (eye drops applied)
       const handlePatientRemoved = async (data: any) => {
-        console.log('📡 Patient removed from eye drop queue:', data);
-        
         // No notification for eye drops applied - just update the queue
         queryClient.invalidateQueries({ queryKey: ['eyeDropQueue'] });
         
         // Trigger immediate UI update
         if (onDataUpdate) {
-          console.log('🔄 Triggering UI update for patient removal');
           onDataUpdate();
         }
       };
 
       // Listen for general queue updates
       const handleQueueUpdate = (data: any) => {
-        console.log('📡 Eye drop queue updated:', data);
         queryClient.invalidateQueries({ queryKey: ['eyeDropQueue'] });
         
         // Trigger immediate UI update
@@ -491,6 +480,92 @@ export const useDoctorQueueSocket = (doctorId?: string) => {
       socket.off('reconnect', joinDoctorRoom);
     };
   }, [doctorId, queryClient]);
+};
+
+// Hook for patients queue real-time updates (optometrist + doctor queues)
+export const usePatientsQueueSocket = () => {
+  const queryClient = useQueryClient();
+
+  useEffect(() => {
+    const serverUrl = process.env.EXPO_PUBLIC_API_BASE_URL?.replace('/api/v1', '') || 
+                     process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') || 
+                     'http://localhost:3000';
+
+    console.log('🔌 Connecting to WebSocket for patients queue updates:', serverUrl);
+
+    try {
+      const socketManager = SocketManager.getInstance();
+      const socket = socketManager.connect(serverUrl);
+
+      // Join both optometrist and ophthalmologist queue rooms
+      const joinQueueRooms = () => {
+        if (socketManager.isSocketConnected()) {
+          socket.emit('queue:join-optometrist');
+          socket.emit('queue:join-ophthalmologist');
+          console.log('🔌 Joined both optometrist and ophthalmologist queue rooms');
+        }
+      };
+
+      socket.on('connect', () => {
+        setTimeout(() => {
+          joinQueueRooms();
+        }, 100);
+      });
+
+      socket.on('reconnect', () => {
+        console.log('🔄 WebSocket reconnected, rejoining rooms...');
+        setTimeout(() => {
+          joinQueueRooms();
+          // Refresh all queue data
+          queryClient.invalidateQueries({ queryKey: ['optometrist-queue'] });
+          queryClient.invalidateQueries({ queryKey: ['doctor-queues'] });
+        }, 100);
+      });
+
+      // Listen for queue updates
+      const handleQueueUpdate = (data: any) => {
+          queryClient.invalidateQueries({ queryKey: ['optometrist-queue'] });
+          queryClient.invalidateQueries({ queryKey: ['doctor-queues'] });
+        };
+
+        const handleQueueReordered = (data: any) => {
+          queryClient.invalidateQueries({ queryKey: ['optometrist-queue'] });
+          queryClient.invalidateQueries({ queryKey: ['doctor-queues'] });
+        };
+
+        const handlePatientAssigned = (data: any) => {
+          queryClient.invalidateQueries({ queryKey: ['doctor-queues'] });
+        };
+
+        const handlePatientCheckedIn = (data: any) => {
+          queryClient.invalidateQueries({ queryKey: ['optometrist-queue'] });
+      };
+
+      const handlePatientCalled = (data: any) => {
+        console.log('📡 Patient called:', data);
+        queryClient.invalidateQueries({ queryKey: ['optometrist-queue'] });
+        queryClient.invalidateQueries({ queryKey: ['doctor-queues'] });
+      };
+
+      socket.on('queue:updated', handleQueueUpdate);
+      socket.on('queue:reordered', handleQueueReordered);
+      socket.on('queue:patient-assigned', handlePatientAssigned);
+      socket.on('queue:patient-called', handlePatientCalled);
+
+      return () => {
+        socket.off('queue:updated', handleQueueUpdate);
+        socket.off('queue:reordered', handleQueueReordered);
+        socket.off('queue:patient-assigned', handlePatientAssigned);
+        socket.off('queue:patient-checked-in', handlePatientCheckedIn);        socket.on('queue:patient-checked-in', handlePatientCheckedIn);        socket.off('queue:patient-called', handlePatientCalled);
+        socket.off('connect', joinQueueRooms);
+        socket.off('reconnect', joinQueueRooms);
+        console.log('🔌 Disconnected from patients queue socket');
+      };
+    } catch (error) {
+      console.error('❌ Failed to initialize patients queue WebSocket:', error);
+      return () => {};
+    }
+  }, [queryClient]);
 };
 
 // Connection status hook
