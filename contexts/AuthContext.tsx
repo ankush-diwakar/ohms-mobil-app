@@ -36,6 +36,7 @@ interface AuthContextType {
   checkAuthStatus: () => Promise<void>;
   getUserRole: () => string | null;
   fetchStaffProfile: () => Promise<User | null>;
+  extendSessionIfNeeded: () => Promise<void>;
 }
 
 // Secure storage keys
@@ -134,17 +135,18 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     try {
       const API_BASE_URL = getApiBaseUrl();
       
-      const response = await fetch(`${API_BASE_URL}/auth/me`, {
+      const response = await fetch(`${API_BASE_URL}/staff/profile`, {
         method: 'GET',
+        credentials: 'include', // Use cookies like web app
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${accessToken}`,
         },
       });
 
       if (response.ok) {
         const data = await response.json();
-        return data.user || data;
+        const staffData = data.data?.staff || data.data;
+        return staffData || null;
       }
       
       return null;
@@ -196,22 +198,40 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
 
   // Check authentication status on app startup
   const checkAuthStatus = async (): Promise<void> => {
+    setIsLoading(true);
+    
     try {
-      setIsLoading(true);
-      
-      // Check if user chose to be remembered
+      // Get remember me preference and tokens
       const rememberMe = await AsyncStorage.getItem(REMEMBER_ME_KEY);
-      if (rememberMe !== 'true') {
-        console.log('📱 Remember me not enabled, showing login');
+      const tokens = await getStoredTokens();
+
+      // If no remember me AND no valid session, logout
+      if (rememberMe !== 'true' && !tokens) {
+        console.log('📱 No remember me and no valid tokens, showing login');
         setUser(null);
+        setIsLoading(false);
         return;
       }
 
-      // Try to get stored tokens
-      const tokens = await getStoredTokens();
+      // If no remember me but has valid short-term session, check if expired
+      if (rememberMe !== 'true' && tokens) {
+        const now = new Date().getTime();
+        const expiresAt = new Date(tokens.expiresAt).getTime();
+        
+        if (now >= expiresAt) {
+          console.log('📱 Short-term session expired, showing login');
+          await clearStoredAuth();
+          setUser(null);
+          setIsLoading(false);
+          return;
+        }
+      }
+
+      // Continue with normal token validation if tokens exist
       if (!tokens) {
         console.log('🔑 No valid tokens found, showing login');
         setUser(null);
+        setIsLoading(false);
         return;
       }
 
@@ -275,12 +295,17 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
           }
         }
         
+        // Calculate expiry based on remember me preference
+        const expiryDuration = rememberMe 
+          ? (7 * 24 * 60 * 60 * 1000) // 7 days for remember me
+          : (8 * 60 * 60 * 1000);      // 8 hours for regular session
+        
         // If no token in cookie, we'll need to rely on credentials: 'include' for subsequent requests
         // For now, create a placeholder token structure for compatibility
         const tokens: AuthTokens = {
           accessToken: token || `session_${Date.now()}`, // Placeholder if no token
           refreshToken: token || `session_${Date.now()}`,
-          expiresAt: new Date(Date.now() + (24 * 60 * 60 * 1000)).toISOString(), // 24 hours
+          expiresAt: new Date(Date.now() + expiryDuration).toISOString(),
         };
 
         // Store tokens securely (even if placeholder)
@@ -302,6 +327,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
       throw error;
     } finally {
       setIsLoading(false);
+    }
+  };
+
+  // Extend session when user is active (if remember me is enabled)
+  const extendSessionIfNeeded = async (): Promise<void> => {
+    try {
+      const rememberMe = await AsyncStorage.getItem(REMEMBER_ME_KEY);
+      const tokens = await getStoredTokens();
+      
+      if (rememberMe === 'true' && tokens) {
+        const now = new Date().getTime();
+        const expiresAt = new Date(tokens.expiresAt).getTime();
+        const timeUntilExpiry = expiresAt - now;
+        
+        // If less than 24 hours remaining, extend for another 7 days
+        if (timeUntilExpiry < (24 * 60 * 60 * 1000)) {
+          const extendedTokens: AuthTokens = {
+            ...tokens,
+            expiresAt: new Date(Date.now() + (7 * 24 * 60 * 60 * 1000)).toISOString(),
+          };
+          
+          await storeTokens(extendedTokens, true);
+          console.log('🔄 Session extended for active user');
+        }
+      }
+    } catch (error) {
+      console.error('❌ Error extending session:', error);
     }
   };
 
@@ -410,6 +462,7 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
     checkAuthStatus,
     getUserRole,
     fetchStaffProfile,
+    extendSessionIfNeeded,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

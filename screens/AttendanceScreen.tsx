@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, ActivityIndicator, AlertButton } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, AlertButton } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -12,6 +12,7 @@ import LottieView from 'lottie-react-native';
 import locationAttendanceService, { type AttendanceError } from '../services/locationAttendanceService';
 import type { LocationAttendanceResponse } from '../services/apiClient';
 import { apiClient } from '../services/apiClient';
+import Loading from '../components/Loading';
 
 export default function AttendanceScreen() {
   const insets = useSafeAreaInsets();
@@ -89,15 +90,7 @@ export default function AttendanceScreen() {
   // Show loading while checking attendance status
   if (checkingStatus) {
     return (
-      <View className="flex-1 bg-[#F8FAFC] justify-center items-center">
-        <ActivityIndicator size="large" color="#0ea5e9" />
-        <Text 
-          className="text-[#657786] text-sm mt-4"
-          style={{ fontFamily: 'Poppins_400Regular' }}
-        >
-          Checking today's attendance status...
-        </Text>
-      </View>
+      <Loading message="Checking today's attendance status..." />
     );
   }
 
@@ -376,15 +369,10 @@ export default function AttendanceScreen() {
 
             {/* Loading Indicator */}
             {loading && (
-              <View className="items-center justify-center py-8">
-                <ActivityIndicator size="large" color="#0ea5e9" />
-                <Text 
-                  className="text-[#657786] text-sm mt-4 text-center"
-                  style={{ fontFamily: 'Poppins_400Regular' }}
-                >
-                  Marking attendance...{'\n'}Getting your location and verifying with hospital premises
-                </Text>
-              </View>
+              <Loading 
+                message="Marking attendance...\nGetting your location and verifying with hospital premises" 
+                animationSize={120} 
+              />
             )}
             </View>
           </View>

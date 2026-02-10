@@ -161,7 +161,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
       {/* Absolute Positioned Avatar */}
       {avatarVisible && (
         <View 
-          className="absolute w-32 h-32 bg-white rounded-full border-4 border-white shadow-xl items-center justify-center"
+          className="absolute w-32 h-32 rounded-full border-4 border-white shadow-xl overflow-hidden"
           style={{
             top: 139, // Position it to overlap gradient and content
             left: 16, // 16px from left
@@ -177,7 +177,7 @@ export default function ProfileScreen({ onLogout }: ProfileScreenProps) {
             src={user?.profilePhoto}
             firstName={user?.firstName}
             lastName={user?.lastName}
-            size="xl"
+            className="w-full h-full"
           />
         </View>
       )}

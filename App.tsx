@@ -1,17 +1,23 @@
-import React, { useState } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { StatusBar } from 'expo-status-bar';
-import { View, ActivityIndicator, Text, TouchableOpacity } from 'react-native';
+import { View, AppState } from 'react-native';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { LinearGradient } from 'expo-linear-gradient';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
+import * as SplashScreen from 'expo-splash-screen';
 
 import LoginScreen from './screens/LoginScreen';
 import TabNavigator from './navigation/TabNavigator';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import PushNotificationService from './services/pushNotificationService';
 
 import './global.css';
+
+// Keep the splash screen visible while we fetch resources
+SplashScreen.preventAutoHideAsync().catch(() => {
+  // Ignore errors - splash screen may already be hidden
+});
 
 // Create a client
 const queryClient = new QueryClient({
@@ -40,39 +46,64 @@ export default function App() {
 }
 
 function AppContent() {
-  const { isAuthenticated, logout, isLoading } = useAuth();
-  const [forceSkipLoading, setForceSkipLoading] = useState(false);
+  const { isAuthenticated, logout, isLoading, extendSessionIfNeeded, user } = useAuth();
+  const pushRegistered = useRef(false);
+  const pushService = useRef(PushNotificationService.getInstance());
 
-  // Show loading screen while checking authentication
-  if (isLoading && !forceSkipLoading) {
-    return (
-      <LinearGradient
-        colors={['#C8E6FF', '#E6F3FF', '#F5FAFF', '#FFFFFF']}
-        locations={[0, 0.4, 0.7, 1]}
-        style={{ flex: 1 }}
-      >
-        <View className="flex-1 justify-center items-center">
-          <ActivityIndicator size="large" color="#0ea5e9" />
-          <Text className="mt-4 text-gray-600 text-base">Loading...</Text>
-          <TouchableOpacity
-            onPress={() => setForceSkipLoading(true)}
-            className="mt-6 bg-blue-500 px-6 py-3 rounded-lg"
-          >
-            <Text className="text-white font-semibold">Skip Loading</Text>
-          </TouchableOpacity>
-        </View>
-      </LinearGradient>
-    );
+  // Hide splash screen once auth check is complete
+  useEffect(() => {
+    if (!isLoading) {
+      SplashScreen.hideAsync().catch(() => {});
+    }
+  }, [isLoading]);
+
+  // Initialize and register push notifications when user is authenticated
+  useEffect(() => {
+    const setupPush = async () => {
+      if (user && isAuthenticated() && !pushRegistered.current) {
+        const token = await pushService.current.initialize();
+        if (token) {
+          await pushService.current.registerWithBackend(
+            user.id || '',
+            user.staffType || 'unknown'
+          );
+          pushRegistered.current = true;
+        }
+      } else if (!user && pushRegistered.current) {
+        await pushService.current.unregisterFromBackend();
+        pushService.current.cleanup();
+        pushRegistered.current = false;
+      }
+    };
+
+    setupPush();
+  }, [user]);
+
+  // Monitor app state for session extension
+  useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        extendSessionIfNeeded();
+      }
+    };
+
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => subscription?.remove();
+  }, [extendSessionIfNeeded]);
+
+  // While checking auth, keep splash screen visible (don't render anything)
+  if (isLoading) {
+    return null;
   }
 
   return (
-    <>
+    <View style={{ flex: 1 }}>
       <StatusBar style="auto" />
       {isAuthenticated() ? (
         <TabNavigator onLogout={logout} />
       ) : (
         <LoginScreen />
       )}
-    </>
+    </View>
   );
 }

@@ -22,6 +22,11 @@ const Avatar: React.FC<AvatarProps> = ({
   const [imageLoading, setImageLoading] = useState(false);
 
   const getSizeStyles = () => {
+    // If className contains w-full h-full, use flex: 1 to fill container
+    if (className.includes('w-full') && className.includes('h-full')) {
+      return { flex: 1 };
+    }
+    
     switch (size) {
       case 'sm':
         return { width: 32, height: 32 };
@@ -114,10 +119,14 @@ const Avatar: React.FC<AvatarProps> = ({
           {imageLoading && (
             <View 
               style={[
-                sizeStyles, 
+                className.includes('w-full') && className.includes('h-full') 
+                  ? { position: 'absolute', top: 0, left: 0, right: 0, bottom: 0 }
+                  : sizeStyles, 
                 { 
                   position: 'absolute',
-                  borderRadius: sizeStyles.width / 2,
+                  borderRadius: className.includes('w-full') && className.includes('h-full') 
+                    ? 1000 // Large value to ensure it's circular
+                    : (sizeStyles as any).width ? (sizeStyles as any).width / 2 : 24,
                   backgroundColor: 'rgba(0,0,0,0.3)',
                   justifyContent: 'center',
                   alignItems: 'center'

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl, ActivityIndicator, Modal, TextInput } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, RefreshControl, Modal, TextInput, ActivityIndicator } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import { StatusBar } from 'expo-status-bar';
 import { Ionicons } from '@expo/vector-icons';
@@ -8,6 +8,7 @@ import * as Haptics from 'expo-haptics';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { Audio } from 'expo-av';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import Loading from '../components/Loading';
 import { useQueryClient, useQuery } from '@tanstack/react-query';
 
 import { eyeDropQueueService, QueuePatient, QueueStats } from '../services/eyeDropQueueService';
@@ -352,10 +353,7 @@ export default function EyeDropQueueScreen() {
 
   if (loading && !refreshing) {
     return (
-      <View className="flex-1 justify-center items-center bg-[#F8FAFC]">
-        <ActivityIndicator size="large" color="#0ea5e9" />
-        <Text className="mt-4 text-gray-600 text-base">Loading queue...</Text>
-      </View>
+      <Loading message="Loading eye drop queue..." />
     );
   }
 

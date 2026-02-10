@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, RefreshControl, FlatList, Alert, ActivityIndicator } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, RefreshControl, FlatList, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -9,6 +9,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 
 import { useAuth } from '../contexts/AuthContext';
 import { usePatientsQueueSocket } from '../services/socketService';
+import Loading from './Loading';
 
 // Types for queue data
 interface Patient {
@@ -137,6 +138,7 @@ function PatientsQueue() {
         return responseData;
       } catch (error) {
         console.error('❌ Error fetching optometrist queue:', error);
+        console.error('❌ API_BASE_URL:', API_BASE_URL);
         throw error;
       }
     },
@@ -179,6 +181,7 @@ function PatientsQueue() {
         return apiData;
       } catch (error) {
         console.error('❌ Error fetching doctor queues:', error);
+        console.error('❌ API_BASE_URL:', API_BASE_URL);
         throw error;
       }
     },
@@ -209,7 +212,7 @@ function PatientsQueue() {
   };
 
   if (!fontsLoaded) {
-    return null;
+    return <Loading message="Loading..." />;
   }
 
   const getStatusColor = (status: string) => {
@@ -569,12 +572,7 @@ function PatientsQueue() {
               </View>
 
               {optometristLoading ? (
-                <View className="bg-white rounded-xl p-8 items-center">
-                  <ActivityIndicator size="large" color="#2563eb" />
-                  <Text className="text-gray-600 mt-4" style={{ fontFamily: 'Poppins_500Medium' }}>
-                    Loading optometrist queue...
-                  </Text>
-                </View>
+                <Loading message="Loading optometrist queue..." animationSize={100} />
               ) : optometristQueueData?.queueEntries && optometristQueueData.queueEntries.length > 0 ? (
                 <>
                   <FlatList
@@ -613,9 +611,11 @@ function PatientsQueue() {
                 </>
               ) : (
                 <View className="bg-white rounded-xl p-8 items-center">
-                  <Text className="text-6xl mb-3">😄</Text>
+                  <View className="bg-gray-100 rounded-full p-4 mb-4">
+                    <Ionicons name="people-outline" size={48} color="#9ca3af" />
+                  </View>
                   <Text className="text-gray-600 text-lg font-semibold mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                    Queue is Empty!
+                    No patients in the queue!
                   </Text>
                   <Text className="text-gray-400 text-sm text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                     No patients waiting for optometrist
@@ -742,9 +742,11 @@ function PatientsQueue() {
                         </>
                       ) : (
                         <View className="bg-white rounded-xl p-8 items-center">
-                          <Text className="text-6xl mb-3">😄</Text>
+                          <View className="bg-gray-100 rounded-full p-4 mb-4">
+                            <Ionicons name="people-outline" size={48} color="#9ca3af" />
+                          </View>
                           <Text className="text-gray-600 text-lg font-semibold mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
-                            Queue is Empty!
+                            No patients in the queue!
                           </Text>
                           <Text className="text-gray-400 text-sm text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
                             No patients assigned to this doctor
@@ -758,10 +760,20 @@ function PatientsQueue() {
             )}
 
             {doctorLoading && (
+              <Loading message="Loading doctor queues..." animationSize={100} />
+            )}
+
+            {/* Empty state when no doctors available */}
+            {!doctorLoading && (!doctorQueueData?.doctorQueues || doctorQueueData.doctorQueues.length === 0) && (
               <View className="bg-white rounded-xl p-8 items-center">
-                <ActivityIndicator size="large" color="#2563eb" />
-                <Text className="text-gray-600 mt-4" style={{ fontFamily: 'Poppins_500Medium' }}>
-                  Loading doctor queues...
+                <View className="bg-gray-100 rounded-full p-4 mb-4">
+                  <Ionicons name="medical-outline" size={48} color="#9ca3af" />
+                </View>
+                <Text className="text-gray-600 text-lg font-semibold mb-2" style={{ fontFamily: 'Poppins_600SemiBold' }}>
+                  Queue is Empty!
+                </Text>
+                <Text className="text-gray-400 text-sm text-center" style={{ fontFamily: 'Poppins_400Regular' }}>
+                  No patients found for doctors consultation!
                 </Text>
               </View>
             )}

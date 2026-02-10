@@ -1,0 +1,239 @@
+========================================================================
+  FIREBASE CLOUD MESSAGING (FCM) SETUP FOR EXPO PUSH NOTIFICATIONS
+========================================================================
+
+This guide walks you through configuring FCM so that push notifications
+work in your production/development build (not Expo Go).
+
+Your app details:
+  - Android package name: com.ankush0007.myexpoapp
+  - iOS bundle ID:        com.ankush0007.myexpoapp
+
+========================================================================
+STEP 1: CREATE A FIREBASE PROJECT
+========================================================================
+
+1. Go to https://console.firebase.google.com/
+2. Click "Create a project" (or "Add project")
+3. Enter a project name, e.g. "OHMS Hospital App"
+4. Google Analytics → you can disable it (not needed for push notifications)
+5. Click "Create project" and wait for it to finish
+6. Click "Continue" to enter the Firebase dashboard
+
+========================================================================
+STEP 2: ADD AN ANDROID APP TO YOUR FIREBASE PROJECT
+========================================================================
+
+1. On the Firebase project dashboard, click the Android icon (or "Add app" → Android)
+2. Fill in the details:
+     - Android package name: com.ankush0007.myexpoapp
+       (MUST match exactly what's in your app.json → android.package)
+     - App nickname: OHMS Hospital (optional, just for your reference)
+     - Debug signing certificate SHA-1: Skip this for now (not required)
+3. Click "Register app"
+4. You'll see a "Download google-services.json" button
+5. Click it to download the file
+6. IMPORTANT: Place the google-services.json file in your project root:
+     my-expo-app/google-services.json
+7. Click "Next" through the remaining Firebase setup steps (skip them,
+   Expo handles the native configuration automatically)
+8. Click "Continue to console"
+
+========================================================================
+STEP 3: ADD google-services.json TO YOUR app.json
+========================================================================
+
+Open my-expo-app/app.json and add the googleServicesFile field inside
+the "android" section:
+
+  "android": {
+    "adaptiveIcon": {
+      "foregroundImage": "./assets/adaptive-icon.png",
+      "backgroundColor": "#ffffff"
+    },
+    "package": "com.ankush0007.myexpoapp",
+    "googleServicesFile": "./google-services.json",     <-- ADD THIS LINE
+    "permissions": [
+      "RECEIVE_BOOT_COMPLETED",
+      "VIBRATE",
+      "WAKE_LOCK",
+      "POST_NOTIFICATIONS",
+      "CAMERA",
+      "ACCESS_FINE_LOCATION",
+      "ACCESS_COARSE_LOCATION"
+    ]
+  }
+
+========================================================================
+STEP 4: INSTALL EAS CLI & LOGIN
+========================================================================
+
+Run these commands in your terminal (one time setup):
+
+  npm install -g eas-cli
+  eas login
+    → Enter your Expo account email and password
+    → (Create an account at https://expo.dev if you don't have one)
+
+Verify you're logged in:
+  eas whoami
+
+========================================================================
+STEP 5: CONFIGURE EAS BUILD
+========================================================================
+
+Run this in my-expo-app/ directory:
+
+  eas build:configure
+
+This creates an eas.json file. Make sure it has a development profile:
+
+  {
+    "cli": {
+      "version": ">= 3.0.0"
+    },
+    "build": {
+      "development": {
+        "developmentClient": true,
+        "distribution": "internal"
+      },
+      "preview": {
+        "distribution": "internal"
+      },
+      "production": {}
+    }
+  }
+
+========================================================================
+STEP 6: UPLOAD FCM SERVER KEY TO EXPO (V2 - Recommended)
+========================================================================
+
+Option A: Using FCM V1 (Recommended - Google is deprecating legacy keys)
+------------------------------------------------------------------------
+1. In Firebase Console → Project Settings (gear icon) → Service accounts
+2. Click "Generate new private key"
+3. Download the JSON file (e.g. ohms-hospital-firebase-adminsdk-xxxxx.json)
+4. Run this command:
+
+   eas credentials
+
+   → Select Android
+   → Select your project
+   → Choose "Push Notifications: Manage your FCM V1 API Key"
+   → Upload the service account JSON file you downloaded
+
+Option B: Using Legacy FCM Server Key (simpler but being deprecated)
+------------------------------------------------------------------------
+1. Go to Firebase Console → Project Settings (gear icon)
+2. Click "Cloud Messaging" tab
+3. If "Cloud Messaging API (Legacy)" is disabled, click the three dots
+   and enable it (it may redirect you to Google Cloud Console)
+4. Copy the "Server key" (starts with AAAA...)
+5. Run:
+
+   eas credentials
+
+   → Select Android
+   → Select your project
+   → Choose "Push Notifications: Manage your FCM API Key"
+   → Paste the server key
+
+========================================================================
+STEP 7: SET YOUR EXPO PROJECT ID
+========================================================================
+
+1. Run:  eas project:info
+   OR go to https://expo.dev → Your project → Settings → Project ID
+
+2. Copy the Project ID (looks like: xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx)
+
+3. Update my-expo-app/.env:
+   EXPO_PUBLIC_PROJECT_ID=your-actual-project-id-here
+
+4. This is already referenced in pushNotificationService.ts:
+   const tokenData = await Notifications.getExpoPushTokenAsync({
+     projectId: process.env.EXPO_PUBLIC_PROJECT_ID,
+   });
+
+========================================================================
+STEP 8: BUILD THE APP
+========================================================================
+
+For Development Build (for testing with dev tools):
+  cd my-expo-app
+  eas build --profile development --platform android
+
+For Production Build (final release):
+  cd my-expo-app
+  eas build --profile production --platform android
+
+The build runs on Expo's cloud servers. It takes 10-20 minutes.
+When done, you'll get a download link for the APK/AAB.
+
+========================================================================
+STEP 9: INSTALL & RUN
+========================================================================
+
+For Development Build:
+  1. Download the APK from the link EAS gives you
+  2. Install it on your Android phone
+  3. Start the dev server:  npx expo start --dev-client
+  4. Open the installed app → it will connect to your dev server
+  5. Push notifications now work fully (foreground, background, killed)
+
+For Production Build:
+  1. Download the AAB from the link
+  2. Upload to Google Play Store, or generate APK from AAB
+  3. Push notifications work automatically via FCM
+
+========================================================================
+CHECKLIST (before building)
+========================================================================
+
+  [ ] Firebase project created
+  [ ] Android app added with package: com.ankush0007.myexpoapp
+  [ ] google-services.json downloaded and placed in my-expo-app/
+  [ ] app.json has "googleServicesFile": "./google-services.json"
+  [ ] EAS CLI installed (npm install -g eas-cli)
+  [ ] Logged into Expo (eas login)
+  [ ] FCM credentials uploaded (eas credentials)
+  [ ] EXPO_PUBLIC_PROJECT_ID set in .env
+  [ ] eas.json configured (eas build:configure)
+
+========================================================================
+TROUBLESHOOTING
+========================================================================
+
+Q: Push notifications work in foreground but not when app is killed?
+A: Make sure google-services.json is correct and FCM key is uploaded
+   to Expo via "eas credentials".
+
+Q: Getting "DeviceNotRegistered" errors on backend?
+A: The push token expired. The backend automatically deactivates these
+   tokens. The app will register a new token on next launch.
+
+Q: "ExponentPushToken" vs "ExpoPushToken"?
+A: Both formats are valid. Our backend accepts both.
+
+Q: Build fails with "google-services.json not found"?
+A: Make sure the file is in my-expo-app/ root (same level as app.json)
+   and the path in app.json matches: "./google-services.json"
+
+========================================================================
+NO CODE CHANGES NEEDED
+========================================================================
+
+All the push notification code is already implemented:
+
+  Mobile:
+    - services/pushNotificationService.ts  (token registration, listeners)
+    - App.tsx                              (initialization on auth)
+
+  Backend:
+    - services/pushNotificationService.js  (Expo Push API sender)
+    - routes/notificationRoutes.js         (register/unregister endpoints)
+    - socket/channels/queueChannel.js      (push on queue events)
+    - prisma/schema.prisma                 (PushToken model)
+
+You only need to do the Firebase + EAS configuration above, then build.
+========================================================================

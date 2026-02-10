@@ -22,7 +22,6 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
   
   // Determine which queue component to show based on staff type
   const isReceptionist2 = user?.staffType === 'receptionist2';
-  const QueueComponent = isReceptionist2 ? EyeDropQueueScreen : PatientsQueue;
   
   return (
     <Tab.Navigator
@@ -34,6 +33,22 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
             return (
               <MaterialCommunityIcons 
                 name={focused ? 'account-group' : 'account-group-outline'} 
+                size={iconSize} 
+                color={color} 
+              />
+            );
+          } else if (route.name === 'PatientsQueue') {
+            return (
+              <MaterialCommunityIcons 
+                name={focused ? 'account-group' : 'account-group-outline'} 
+                size={iconSize} 
+                color={color} 
+              />
+            );  
+          } else if (route.name === 'EyeDropQueue') {
+            return (
+              <Ionicons 
+                name={focused ? 'eye' : 'eye-outline'} 
                 size={iconSize} 
                 color={color} 
               />
@@ -100,28 +115,67 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
         headerShown: false,
       })}
     >
-      <Tab.Screen 
-        name="Queue" 
-        component={QueueComponent}
-        options={{
-          tabBarLabel: isReceptionist2 ? 'Eye Drops' : 'Queue',
-        }}
-      />
-      <Tab.Screen 
-        name="Attendance" 
-        component={AttendanceScreen}
-        options={{
-          tabBarLabel: 'Attendance',
-        }}
-      />
-      <Tab.Screen 
-        name="Profile"
-        options={{
-          tabBarLabel: 'Profile',
-        }}
-      >
-        {() => <ProfileScreen onLogout={onLogout} />}
-      </Tab.Screen>
+      {/* Conditional rendering based on staff type */}
+      {isReceptionist2 ? (
+        <>
+          {/* Receptionist2 gets 4 tabs */}
+          <Tab.Screen 
+            name="PatientsQueue" 
+            component={PatientsQueue}
+            options={{
+              tabBarLabel: 'Patients Queue',
+            }}
+          />
+          <Tab.Screen 
+            name="EyeDropQueue" 
+            component={EyeDropQueueScreen}
+            options={{
+              tabBarLabel: 'Eye Drop Queue',
+            }}
+          />
+          <Tab.Screen 
+            name="Attendance" 
+            component={AttendanceScreen}
+            options={{
+              tabBarLabel: 'Attendance',
+            }}
+          />
+          <Tab.Screen 
+            name="Profile"
+            options={{
+              tabBarLabel: 'Profile',
+            }}
+          >
+            {() => <ProfileScreen onLogout={onLogout} />}
+          </Tab.Screen>
+        </>
+      ) : (
+        <>
+          {/* Other staff get 3 tabs */}
+          <Tab.Screen 
+            name="Queue" 
+            component={PatientsQueue}
+            options={{
+              tabBarLabel: 'Queue',
+            }}
+          />
+          <Tab.Screen 
+            name="Attendance" 
+            component={AttendanceScreen}
+            options={{
+              tabBarLabel: 'Attendance',
+            }}
+          />
+          <Tab.Screen 
+            name="Profile"
+            options={{
+              tabBarLabel: 'Profile',
+            }}
+          >
+            {() => <ProfileScreen onLogout={onLogout} />}
+          </Tab.Screen>
+        </>
+      )}
     </Tab.Navigator>
   );
 }
