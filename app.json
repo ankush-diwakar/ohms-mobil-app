@@ -67,6 +67,7 @@
         "backgroundColor": "#ffffff"
       },
       "package": "com.ankush0007.myexpoapp",
+      "googleServicesFile": "./google-services.json",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE",
@@ -74,8 +75,17 @@
         "POST_NOTIFICATIONS",
         "CAMERA",
         "ACCESS_FINE_LOCATION",
-        "ACCESS_COARSE_LOCATION"
+        "ACCESS_COARSE_LOCATION",
+        "android.permission.CAMERA",
+        "android.permission.RECORD_AUDIO",
+        "android.permission.ACCESS_COARSE_LOCATION",
+        "android.permission.ACCESS_FINE_LOCATION"
       ]
+    },
+    "extra": {
+      "eas": {
+        "projectId": "c5eeb623-8313-43cf-ad8f-617106c60556"
+      }
     }
   }
 }

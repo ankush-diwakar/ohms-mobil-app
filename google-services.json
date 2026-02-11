@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "462567762175",
+    "project_id": "ohms-8bed9",
+    "storage_bucket": "ohms-8bed9.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:462567762175:android:a42179e9496fb8a75344ca",
+        "android_client_info": {
+          "package_name": "com.ankush0007.myexpoapp"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBDy_xV7Z6gocuwVLqISGUXcB5nM1nDPuk"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
