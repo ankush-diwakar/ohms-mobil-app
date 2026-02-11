@@ -11,6 +11,7 @@ import TabNavigator from './navigation/TabNavigator';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ErrorBoundary } from './components/ErrorBoundary';
 import PushNotificationService from './services/pushNotificationService';
+import { useGlobalQueueNotifications } from './services/socketService';
 
 import './global.css';
 
@@ -49,6 +50,10 @@ function AppContent() {
   const { isAuthenticated, logout, isLoading, extendSessionIfNeeded, user } = useAuth();
   const pushRegistered = useRef(false);
   const pushService = useRef(PushNotificationService.getInstance());
+
+  // 🔔 Global queue notifications — fires local notifications for all queue
+  // events regardless of which screen is active (works in Expo Go too)
+  useGlobalQueueNotifications(user?.staffType, user?.id);
 
   // Hide splash screen once auth check is complete
   useEffect(() => {

@@ -590,3 +590,149 @@ export const useSocketConnectionStatus = () => {
 
 // Export socket manager for manual operations
 export const getSocketManager = () => SocketManager.getInstance();
+
+/**
+ * Global notification hook — runs at App level so notifications fire
+ * regardless of which screen is active. Joins all relevant rooms based
+ * on the user's staffType and triggers local notifications for every
+ * queue event. This works in Expo Go (unlike remote push which needs
+ * a development build on SDK 53+).
+ */
+export const useGlobalQueueNotifications = (
+  staffType?: string,
+  staffId?: string
+) => {
+  useEffect(() => {
+    if (!staffType || !staffId) return;
+
+    const serverUrl =
+      process.env.EXPO_PUBLIC_API_BASE_URL?.replace('/api/v1', '') ||
+      process.env.EXPO_PUBLIC_API_URL?.replace('/api/v1', '') ||
+      'http://localhost:3000';
+
+    const socketManager = SocketManager.getInstance();
+    const socket = socketManager.connect(serverUrl);
+
+    // Join rooms based on staff type
+    const joinRooms = () => {
+      if (!socketManager.isSocketConnected()) return;
+
+      if (staffType === 'receptionist2') {
+        socket.emit('queue:join-receptionist2');
+        socket.emit('queue:join-ophthalmologist');
+        console.log('🔔 [Global] Joined receptionist2 + ophthalmologist rooms');
+      } else if (
+        staffType === 'ophthalmologist' ||
+        staffType === 'doctor'
+      ) {
+        socket.emit('queue:join-doctor', staffId);
+        socket.emit('queue:join-ophthalmologist');
+        console.log('🔔 [Global] Joined doctor rooms:', staffId);
+      } else if (staffType === 'optometrist') {
+        socket.emit('queue:join-optometrist');
+        console.log('🔔 [Global] Joined optometrist room');
+      }
+    };
+
+    socket.on('connect', () => setTimeout(joinRooms, 150));
+    socket.on('reconnect', () => setTimeout(joinRooms, 150));
+    // If already connected, join immediately
+    if (socketManager.isSocketConnected()) joinRooms();
+
+    // ---- Notification handlers ----
+
+    // New patient sent to eye drop queue (doctor → receptionist2)
+    const onPatientOnHold = async (data: any) => {
+      console.log('🔔 [Global] patient-on-hold:', data);
+      const name = data.patientName || (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : 'A patient');
+      const reasons = Array.isArray(data.reasons) ? data.reasons.join(', ') : 'Eye drops';
+      await scheduleLocalNotification(
+        '💧 New Patient – Eye Drops',
+        `${name} needs: ${reasons}`,
+        { type: 'patient-on-hold', ...data }
+      );
+    };
+
+    // Eye drops applied – patient returning to doctor
+    const onPatientAvailable = async (data: any) => {
+      console.log('🔔 [Global] patient-available:', data);
+      const name = data.patientName || 'A patient';
+      await scheduleLocalNotification(
+        '✅ Eye Drops Applied',
+        `${name} is ready – eye drops have been applied`,
+        { type: 'eye-drops-applied', ...data }
+      );
+    };
+
+    // Patient assigned to doctor
+    const onPatientAssigned = async (data: any) => {
+      console.log('🔔 [Global] patient-assigned:', data);
+      const name = data.patientName || 'A patient';
+      await scheduleLocalNotification(
+        '👤 New Patient Assigned',
+        `${name} has been assigned to your queue`,
+        { type: 'patient-assigned', ...data }
+      );
+    };
+
+    // Patient resumed from observation
+    const onPatientResumed = async (data: any) => {
+      console.log('🔔 [Global] patient-resumed:', data);
+      const name = data.patientName || (data.firstName && data.lastName ? `${data.firstName} ${data.lastName}` : 'A patient');
+      await scheduleLocalNotification(
+        '🔄 Patient Resumed',
+        `${name} resumed from observation`,
+        { type: 'patient-resumed', ...data }
+      );
+    };
+
+    // Patient marked ready
+    const onPatientReady = async (data: any) => {
+      console.log('🔔 [Global] patient-ready:', data);
+      const name = data.patientName || 'A patient';
+      await scheduleLocalNotification(
+        '🟢 Patient Ready',
+        `${name} is ready for examination`,
+        { type: 'patient-ready', ...data }
+      );
+    };
+
+    // Subscribe
+    socket.on('queue:patient-on-hold', onPatientOnHold);
+    socket.on('queue:patient-available', onPatientAvailable);
+    socket.on('queue:patient-assigned', onPatientAssigned);
+    socket.on('queue:patient-resumed', onPatientResumed);
+    socket.on('queue:patient-ready', onPatientReady);
+
+    return () => {
+      socket.off('queue:patient-on-hold', onPatientOnHold);
+      socket.off('queue:patient-available', onPatientAvailable);
+      socket.off('queue:patient-assigned', onPatientAssigned);
+      socket.off('queue:patient-resumed', onPatientResumed);
+      socket.off('queue:patient-ready', onPatientReady);
+    };
+  }, [staffType, staffId]);
+};
+
+/** Fire-and-forget local notification helper */
+async function scheduleLocalNotification(
+  title: string,
+  body: string,
+  data: Record<string, any> = {}
+) {
+  try {
+    await Notifications.scheduleNotificationAsync({
+      content: {
+        title,
+        body,
+        sound: true,
+        priority: Notifications.AndroidNotificationPriority.HIGH,
+        data,
+      },
+      trigger: null, // show immediately
+    });
+    Haptics.notificationAsync(Haptics.NotificationFeedbackType.Success);
+  } catch (e) {
+    console.error('❌ [Global] Failed to send local notification:', e);
+  }
+}
