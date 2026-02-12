@@ -1,7 +1,7 @@
 {
   "expo": {
     "name": "ohms",
-    "slug": "ohms",
+    "slug": "my-expo-app",
     "version": "1.0.0",
     "web": {
       "favicon": "./assets/favicon.png"
@@ -90,6 +90,7 @@
       "EXPO_PUBLIC_API_URL": "https://api.ankushhh.me/api/v1",
       "EXPO_PUBLIC_API_IMG_URL": "https://api.ankushhh.me",
       "EXPO_PUBLIC_PROJECT_ID": "0f294184-1186-4cf5-ae03-5df9264510fc"
-    }
+    },
+    "owner": "yogineers"
   }
 }
