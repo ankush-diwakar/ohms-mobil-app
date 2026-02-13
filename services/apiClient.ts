@@ -23,6 +23,8 @@ interface LocationAttendanceRequest {
 interface LocationAttendanceResponse {
   id: string;
   checkInTime: string;
+  checkOutTime?: string; // Optional checkout time
+  workingHours?: number; // Optional working hours
   status: string;
   attendanceMethod: string;
   location: {
@@ -247,6 +249,11 @@ class ApiClient {
   // Check today's attendance status
   async getTodayAttendanceStatus(): Promise<ApiResponse<LocationAttendanceResponse | null>> {
     return this.get<LocationAttendanceResponse | null>('/attendance/today-status');
+  }
+
+  // Checkout attendance
+  async checkOut(): Promise<ApiResponse<any>> {
+    return this.post('/attendance/checkout', {});
   }
 }
 

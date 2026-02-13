@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, AlertButton } from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity, Alert, Modal, TextInput, AlertButton, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { StatusBar } from 'expo-status-bar';
@@ -29,6 +29,9 @@ export default function AttendanceScreen() {
   const [showManualEntry, setShowManualEntry] = useState(false);
   const [manualOTP, setManualOTP] = useState('');
   
+  // Checkout state
+  const [checkingOut, setCheckingOut] = useState(false);
+  
   let [fontsLoaded] = useFonts({
     Poppins_400Regular,
     Poppins_500Medium,
@@ -55,6 +58,8 @@ export default function AttendanceScreen() {
           const transformedData: LocationAttendanceResponse = {
             id: attendanceInfo.id,
             checkInTime: attendanceInfo.checkInTime,
+            checkOutTime: attendanceInfo.checkOutTime, // Include checkout time
+            workingHours: attendanceInfo.workingHours, // Include working hours
             status: attendanceInfo.status,
             attendanceMethod: attendanceInfo.attendanceMethod || 'location_based',
             location: attendanceInfo.location || {
@@ -198,6 +203,56 @@ export default function AttendanceScreen() {
     } finally {
       setLoading(false);
     }
+  };
+
+  const handleCheckOut = async () => {
+    Alert.alert(
+      'Check Out',
+      'Are you sure you want to check out for today?',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Check Out',
+          style: 'destructive',
+          onPress: async () => {
+            try {
+              setCheckingOut(true);
+              
+              const response = await apiClient.checkOut();
+              
+              if (response.success) {
+                // Clear attendance data to show check-in UI again
+                setAttendanceData(null);
+                
+                Alert.alert(
+                  'Checked Out Successfully!',
+                  `You have been checked out at ${new Date().toLocaleTimeString()}.\n\nSee you tomorrow!`,
+                  [{ text: 'OK' }]
+                );
+              } else {
+                Alert.alert(
+                  'Check Out Failed',
+                  response.message || 'Failed to check out. Please try again or contact support.',
+                  [{ text: 'OK' }]
+                );
+              }
+            } catch (error) {
+              console.error('❌ Check out error:', error);
+              Alert.alert(
+                'Check Out Error',
+                'An error occurred while checking out. Please try again.',
+                [{ text: 'OK' }]
+              );
+            } finally {
+              setCheckingOut(false);
+            }
+          },
+        },
+      ]
+    );
   };
 
   const getCurrentDate = () => {
@@ -384,21 +439,28 @@ export default function AttendanceScreen() {
             {/* Combined Success Card with Green Message, Animation and Date */}
             <View className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden mb-6">
               {/* Success Status at Top */}
-              <View className="px-6 py-6" style={{ backgroundColor: '#10b981' }}>
+              <View className="px-6 py-6" style={{ backgroundColor: attendanceData.checkOutTime ? '#6b7280' : '#10b981' }}>
                 <View className="items-center mb-2">
-                  <Ionicons name="checkmark-circle" size={28} color="white" />
+                  <Ionicons 
+                    name={attendanceData.checkOutTime ? "timer" : "checkmark-circle"} 
+                    size={28} 
+                    color="white" 
+                  />
                   <Text 
                     className="text-white text-xl font-bold mt-2 text-center"
                     style={{ fontFamily: 'Poppins_700Bold' }}
                   >
-                    Attendance Marked
+                    {attendanceData.checkOutTime ? 'Work Day Completed' : 'Attendance Marked'}
                   </Text>
                 </View>
                 <Text 
                   className="text-white text-center text-sm opacity-90"
                   style={{ fontFamily: 'Poppins_400Regular' }}
                 >
-                  MARKED AT {attendanceData ? new Date((attendanceData as any).checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}
+                  {attendanceData.checkOutTime 
+                    ? `CHECKED OUT AT ${new Date(attendanceData.checkOutTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}`
+                    : `MARKED AT ${attendanceData ? new Date((attendanceData as any).checkInTime).toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' }) : ''}`
+                  }
                 </Text>
               </View>
 
@@ -479,6 +541,57 @@ export default function AttendanceScreen() {
                   </View>
                 </View>
 
+                {/* Check-out Time - Only show if checked out */}
+                {attendanceData.checkOutTime && (
+                  <View className="flex-row items-center mb-6">
+                    <View className="w-12 h-12 bg-orange-100 rounded-xl items-center justify-center">
+                      <Ionicons name="time-outline" size={24} color="#f97316" />
+                    </View>
+                    <View className="ml-4 flex-1">
+                      <Text 
+                        className="text-gray-500 text-sm font-medium mb-1"
+                        style={{ fontFamily: 'Poppins_500Medium' }}
+                      >
+                        CHECK-OUT TIME
+                      </Text>
+                      <Text 
+                        className="text-[#14171A] text-lg font-bold"
+                        style={{ fontFamily: 'Poppins_700Bold' }}
+                      >
+                        {new Date(attendanceData.checkOutTime).toLocaleTimeString('en-US', { 
+                          hour: '2-digit', 
+                          minute: '2-digit',
+                          second: '2-digit',
+                          hour12: true 
+                        })}
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
+                {/* Total Working Hours - Only show if checked out */}
+                {attendanceData.workingHours && (
+                  <View className="flex-row items-center mb-6">
+                    <View className="w-12 h-12 bg-blue-100 rounded-xl items-center justify-center">
+                      <Ionicons name="timer" size={24} color="#3b82f6" />
+                    </View>
+                    <View className="ml-4 flex-1">
+                      <Text 
+                        className="text-gray-500 text-sm font-medium mb-1"
+                        style={{ fontFamily: 'Poppins_500Medium' }}
+                      >
+                        TOTAL WORKING TIME
+                      </Text>
+                      <Text 
+                        className="text-[#14171A] text-lg font-bold"
+                        style={{ fontFamily: 'Poppins_700Bold' }}
+                      >
+                        {attendanceData.workingHours.toFixed(2)} hours
+                      </Text>
+                    </View>
+                  </View>
+                )}
+
                 {/* Location Accuracy */}
                 <View className="flex-row items-center mb-6">
                   <View className="w-12 h-12 bg-green-100 rounded-xl items-center justify-center">
@@ -522,6 +635,93 @@ export default function AttendanceScreen() {
                   </View>
                 </View>
               </View>
+            </View>
+
+            {/* Check Out Button or Check Out Status */}
+            <View className="px-6 pb-6">
+              {attendanceData.checkOutTime ? (
+                // Show checkout status if already checked out
+                <View className="bg-gray-100 rounded-xl p-4 border border-gray-200">
+                  <View className="flex-row items-center justify-center mb-2">
+                    <Ionicons name="checkmark-circle" size={24} color="#10b981" />
+                    <Text 
+                      className="text-gray-700 text-lg font-bold ml-3"
+                      style={{ fontFamily: 'Poppins_700Bold' }}
+                    >
+                      Already Checked Out
+                    </Text>
+                  </View>
+                  <Text 
+                    className="text-gray-500 text-sm text-center"
+                    style={{ fontFamily: 'Poppins_400Regular' }}
+                  >
+                    Checked out at {new Date(attendanceData.checkOutTime).toLocaleTimeString('en-US', {
+                      hour: '2-digit',
+                      minute: '2-digit',
+                      hour12: true
+                    })}
+                  </Text>
+                  {attendanceData.workingHours && (
+                    <Text 
+                      className="text-blue-600 text-sm text-center mt-1 font-medium"
+                      style={{ fontFamily: 'Poppins_500Medium' }}
+                    >
+                      Total work time: {attendanceData.workingHours.toFixed(2)} hours
+                    </Text>
+                  )}
+                </View>
+              ) : (
+                // Show checkout button if not checked out yet
+                <TouchableOpacity 
+                  onPress={handleCheckOut}
+                  activeOpacity={0.8}
+                  disabled={checkingOut}
+                  className="bg-red-500 rounded-xl p-4"
+                  style={{
+                    shadowColor: '#ef4444',
+                    shadowOffset: { width: 0, height: 4 },
+                    shadowOpacity: 0.3,
+                    shadowRadius: 8,
+                    elevation: 8,
+                    opacity: checkingOut ? 0.6 : 1
+                  }}
+                >
+                  <View className="flex-row items-center justify-center"> 
+                    {checkingOut ? (
+                      <>
+                        <LottieView
+                          source={require('../animations/eye.json')}
+                          autoPlay
+                          loop
+                          style={{ width: 24, height: 24 }}
+                        />
+                        <Text 
+                          className="text-white text-lg font-bold ml-3"
+                          style={{ fontFamily: 'Poppins_700Bold' }}
+                        >
+                          Checking Out...
+                        </Text>
+                      </>
+                    ) : (
+                    <>
+                      <Ionicons name="log-out" size={24} color="white" />
+                      <Text 
+                        className="text-white text-lg font-bold ml-3"
+                        style={{ fontFamily: 'Poppins_700Bold' }}
+                      >
+                        Check Out
+                      </Text>
+                    </>
+                  )}
+                </View>
+                <Text 
+                  className="text-red-100 text-sm text-center mt-2"
+                  style={{ fontFamily: 'Poppins_400Regular' }}
+                >
+                  End your workday and mark checkout time
+                </Text>
+              </TouchableOpacity>
+              )}
             </View>
           </View>
         )}

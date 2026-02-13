@@ -97,12 +97,30 @@ export default function LoginScreen() {
     } catch (error: any) {
       console.error('Login error:', error);
       
-      let errorMessage = 'Login failed. Please try again.';
+      let errorTitle = 'Login Failed';
+      let errorMessage = 'Unable to sign in. Please try again.';
+      
       if (error.message) {
+        // Use the user-friendly message from AuthContext
         errorMessage = error.message;
+        
+        // Customize title based on error type
+        if (error.message.includes('Invalid username or password')) {
+          errorTitle = 'Invalid Credentials';
+        } else if (error.message.includes('account access')) {
+          errorTitle = 'Access Restricted';
+        } else if (error.message.includes('User not found')) {
+          errorTitle = 'User Not Found';
+        } else if (error.message.includes('Too many login attempts')) {
+          errorTitle = 'Too Many Attempts';
+        } else if (error.message.includes('Server error')) {
+          errorTitle = 'Server Error';
+        }
       }
 
-      Alert.alert('Login Failed', errorMessage);
+      Alert.alert(errorTitle, errorMessage, [
+        { text: 'OK', style: 'default' }
+      ]);
     } finally {
       setIsLoading(false);
     }

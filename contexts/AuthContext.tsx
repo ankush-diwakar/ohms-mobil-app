@@ -320,7 +320,33 @@ export const AuthProvider = ({ children }: AuthProviderProps) => {
         console.log('✅ Login successful');
       } else {
         const errorData = await response.json().catch(() => ({ message: 'Login failed' }));
-        throw new Error(errorData.message || `Login failed with status: ${response.status}`);
+        
+        // Provide user-friendly error messages based on status codes
+        let userFriendlyMessage = errorData.message;
+        if (!userFriendlyMessage) {
+          switch (response.status) {
+            case 401:
+              userFriendlyMessage = 'Invalid username or password. Please check your credentials and try again.';
+              break;
+            case 403:
+              userFriendlyMessage = 'Your account access has been restricted. Please contact your administrator.';
+              break;
+            case 404:
+              userFriendlyMessage = 'User not found. Please check your username or contact support.';
+              break;
+            case 429:
+              userFriendlyMessage = 'Too many login attempts. Please wait a few minutes before trying again.';
+              break;
+            case 500:
+              userFriendlyMessage = 'Server error occurred. Please try again later or contact support.';
+              break;
+            default:
+              userFriendlyMessage = `Login failed. Please check your connection and try again.`;
+              break;
+          }
+        }
+        
+        throw new Error(userFriendlyMessage);
       }
     } catch (error: any) {
       console.error('❌ Login error:', error);

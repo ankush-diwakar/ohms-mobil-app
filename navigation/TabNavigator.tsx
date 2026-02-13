@@ -86,7 +86,7 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
           borderTopColor: '#E1E8ED',
           borderTopWidth: 0.5,
           paddingTop: 6,
-          paddingBottom: Math.max(insets.bottom, 8), // Use safe area bottom inset
+          paddingBottom: Math.max(insets.bottom + 12, 20), // Increased bottom padding
           paddingHorizontal: 4,
           height: 64 + Math.max(insets.bottom - 8, 0), // Adjust height for safe area
           shadowColor: '#000',
@@ -120,6 +120,13 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
         <>
           {/* Receptionist2 gets 4 tabs */}
           <Tab.Screen 
+            name="Attendance" 
+            component={AttendanceScreen}
+            options={{
+              tabBarLabel: 'Attendance',
+            }}
+          />
+          <Tab.Screen 
             name="PatientsQueue" 
             component={PatientsQueue}
             options={{
@@ -131,13 +138,6 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
             component={EyeDropQueueScreen}
             options={{
               tabBarLabel: 'Eye Drop Queue',
-            }}
-          />
-          <Tab.Screen 
-            name="Attendance" 
-            component={AttendanceScreen}
-            options={{
-              tabBarLabel: 'Attendance',
             }}
           />
           <Tab.Screen 
@@ -153,17 +153,17 @@ export default function TabNavigator({ onLogout }: TabNavigatorProps) {
         <>
           {/* Other staff get 3 tabs */}
           <Tab.Screen 
-            name="Queue" 
-            component={PatientsQueue}
-            options={{
-              tabBarLabel: 'Queue',
-            }}
-          />
-          <Tab.Screen 
             name="Attendance" 
             component={AttendanceScreen}
             options={{
               tabBarLabel: 'Attendance',
+            }}
+          />
+          <Tab.Screen 
+            name="Queue" 
+            component={PatientsQueue}
+            options={{
+              tabBarLabel: 'Queue',
             }}
           />
           <Tab.Screen 
